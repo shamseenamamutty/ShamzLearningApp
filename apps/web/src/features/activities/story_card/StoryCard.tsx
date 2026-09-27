@@ -1,0 +1,46 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { courseIdOf, directionOf, getItem } from '@/content/course';
+import { speak } from '@/engine/audio';
+import { Picture } from '@/ui/Picture';
+import { ScriptText } from '@/ui/ScriptText';
+import { Button } from '@/ui/Button';
+import type { ActivityProps } from '../types';
+
+/** A8 Story Card: a short scene of this unit's letters so far. Tap an object to hear its word. */
+export default function StoryCard({ activity, onDone }: ActivityProps<'story_card'>) {
+  const { t } = useTranslation();
+  const [heard, setHeard] = useState<string[]>([]);
+  const courseId = courseIdOf(activity.itemId);
+
+  return (
+    <div data-testid="story-card" className="flex flex-col items-center gap-6 pb-4 pt-2">
+      <div dir={directionOf(activity.itemId)} className="grid w-full grid-cols-2 gap-4 rounded-blob bg-sky2-100 p-5">
+        {activity.items.map((id) => {
+          const item = getItem(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              data-testid={`story-item-${id}`}
+              aria-label={item.example.meaning}
+              onClick={() => {
+                speak(item.example.word, courseId as 'ar' | 'hi');
+                setHeard((h) => (h.includes(id) ? h : [...h, id]));
+              }}
+              className={`flex flex-col items-center gap-2 rounded-3xl bg-white p-4 shadow-[0_5px_0_#bae6fd] transition-transform active:translate-y-1 ${
+                heard.includes(id) ? 'ring-4 ring-sky2-400' : ''
+              }`}
+            >
+              <span className="text-6xl"><Picture value={item.example.emoji} alt={item.example.meaning} /></span>
+              <ScriptText courseId={courseId} className="text-2xl font-bold">{item.example.word}</ScriptText>
+            </button>
+          );
+        })}
+      </div>
+      <Button block onClick={() => onDone({ correct: true })}>
+        {t('common.continue')} <span className="rtl:-scale-x-100">➡️</span>
+      </Button>
+    </div>
+  );
+}
