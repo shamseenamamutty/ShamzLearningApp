@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ADMIN_EMAIL, useStore } from '@/lib/store';
+import { ADMIN_EMAIL, isAdminLogin, useStore } from '@/lib/store';
 import { Button } from '@/ui/Button';
 import { Screen } from '@/ui/Screen';
 
@@ -24,7 +24,7 @@ export default function EnrollScreen() {
     e.preventDefault();
     setGateError(null);
     if (adminEmail.trim().toLowerCase() !== ADMIN_EMAIL) return setGateError(t('enroll.notAdmin'));
-    if (!(await signIn(adminEmail, adminPassword))) return setGateError(t('enroll.wrongCredentials'));
+    if (!(await isAdminLogin(adminEmail, adminPassword)) && !(await signIn(adminEmail, adminPassword))) return setGateError(t('enroll.wrongCredentials'));
     setVerified(true);
   };
 

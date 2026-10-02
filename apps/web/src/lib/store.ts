@@ -53,6 +53,13 @@ export interface BackendAuth {
 
 /** Only this account can enroll caregivers (checked against the real, already-registered parent login). */
 export const ADMIN_EMAIL = 'shamsisr@gmail.com';
+/** SHA-256 of the admin password (via hashSecret) — the password itself is never stored in the code. */
+const ADMIN_PASSWORD_HASH = '58824c1ae50f5aefbfe42d8d01ee51d86449d07086cbb9130f46da906d6163e2';
+
+/** Static admin check: the fixed admin email plus the admin password. */
+export async function isAdminLogin(email: string, password: string): Promise<boolean> {
+  return email.trim().toLowerCase() === ADMIN_EMAIL && (await hashSecret(password)) === ADMIN_PASSWORD_HASH;
+}
 
 export interface EnrolledMember {
   email: string;

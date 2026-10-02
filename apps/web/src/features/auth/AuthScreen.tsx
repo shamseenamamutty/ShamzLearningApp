@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useStore } from '@/lib/store';
+import { isAdminLogin, useStore } from '@/lib/store';
 import { Button } from '@/ui/Button';
 import { Screen } from '@/ui/Screen';
 
@@ -18,6 +18,17 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
   const [password, setPassword] = useState('');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminError, setAdminError] = useState<string | null>(null);
+
+  const submitAdmin = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!(await isAdminLogin(adminEmail, adminPassword))) return setAdminError(t('auth.wrongCredentials'));
+    adminSignIn();
+    navigate('/profiles');
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -70,14 +81,33 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
       </form>
       <button
         type="button"
-        onClick={() => {
-          adminSignIn();
-          navigate('/profiles');
-        }}
+        aria-expanded={adminOpen}
+        onClick={() => setAdminOpen((o) => !o)}
         className="mt-2 w-full text-center text-sm font-bold text-ink/40 underline underline-offset-2"
       >
         🛠️ {t('auth.adminAccess')}
       </button>
+      {adminOpen && (
+        <form onSubmit={submitAdmin} className="mt-3 flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm" noValidate>
+          <p className="text-center font-bold">{t('auth.adminTitle')}</p>
+          <label className="flex flex-col gap-1 font-bold">
+            {t('enroll.adminEmail')}
+            <input className={input} type="email" autoComplete="username" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1 font-bold">
+            {t('enroll.adminPassword')}
+            <input className={input} type="password" autoComplete="current-password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} />
+          </label>
+          {adminError && (
+            <p role="alert" className="rounded-2xl bg-coral-100 p-3 font-bold text-coral-500">
+              {adminError}
+            </p>
+          )}
+          <Button type="submit" block>
+            {t('auth.adminSignIn')}
+          </Button>
+        </form>
+      )}
       {mode === 'signin' && (
         <>
           <button

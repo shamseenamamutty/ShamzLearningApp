@@ -41,9 +41,11 @@
     "noAccount": "Create a new account",
     "wrongCredentials": "That email and password don't match.",
     "invalid": "Please enter a valid email and a password of 8+ characters, and tick the consent box.",
-    "adminAccess": "Continue as admin (skip sign-up)",
+    "adminAccess": "Continue as admin",
     "pinSignIn": "Sign in with a caregiver PIN",
-    "enroll": "Enroll a caregiver"
+    "enroll": "Enroll a caregiver",
+    "adminTitle": "Admin sign-in",
+    "adminSignIn": "Sign in as admin"
   },
   "enroll": {
     "title": "Enroll a caregiver",
