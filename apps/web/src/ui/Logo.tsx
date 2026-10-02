@@ -1,4 +1,4 @@
-/** Kidzly brand: "Zee", a cheerful speech-bubble mascot, plus the Fredoka wordmark. */
+/** Kidzly brand: the Sprout Rocket mascot (blast off + grow) and the Fredoka wordmark. */
 
 interface MarkProps {
   className?: string;
@@ -11,35 +11,40 @@ export function LogoMark({ className, title }: MarkProps) {
     <svg viewBox="0 0 200 200" className={className} role={title ? 'img' : undefined} aria-hidden={title ? undefined : true}>
       {title && <title>{title}</title>}
       <defs>
-        <linearGradient id="kz-body" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fde68a" />
-          <stop offset="1" stopColor="#fbbf24" />
+        <linearGradient id="kz-body" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#bbf7d0" />
+          <stop offset=".55" stopColor="#4ade80" />
+          <stop offset="1" stopColor="#22c55e" />
         </linearGradient>
       </defs>
-      {/* body: a round speech bubble with a little tail */}
-      <path
-        d="M100 26c46 0 80 29 80 68s-34 68-80 68c-11 0-21-2-30-5l-32 17 9-30C33 134 20 115 20 94c0-39 34-68 80-68z"
-        fill="url(#kz-body)"
-        stroke="#f59e0b"
-        strokeWidth="5"
-        strokeLinejoin="round"
-      />
-      <ellipse cx="66" cy="56" rx="20" ry="10" fill="#fff" opacity=".55" transform="rotate(-20 66 56)" />
-      {/* eyes */}
-      <ellipse cx="76" cy="90" rx="11" ry="14" fill="#2d2a4a" />
-      <ellipse cx="124" cy="90" rx="11" ry="14" fill="#2d2a4a" />
-      <circle cx="80" cy="84" r="4.5" fill="#fff" />
-      <circle cx="128" cy="84" r="4.5" fill="#fff" />
-      {/* cheeks */}
-      <ellipse cx="56" cy="112" rx="11" ry="7" fill="#fb7185" opacity=".65" />
-      <ellipse cx="144" cy="112" rx="11" ry="7" fill="#fb7185" opacity=".65" />
-      {/* happy open mouth with tongue */}
-      <path d="M84 110q16 22 32 0z" fill="#2d2a4a" strokeLinejoin="round" stroke="#2d2a4a" strokeWidth="3" />
-      <path d="M92 118q8 6 16 0q-8-7-16 0z" fill="#fb7185" />
+      <g transform="rotate(32 100 108)" strokeLinejoin="round">
+        {/* flame */}
+        <path d="M80 140q20 52 40 0z" fill="#f59e0b" />
+        <path d="M89 140q11 30 22 0z" fill="#fde68a" />
+        {/* fins */}
+        <path d="M70 112l-24 32 28-6zM130 112l24 32-28-6z" fill="#38bdf8" stroke="#0284c7" strokeWidth="4" />
+        {/* body */}
+        <path d="M100 46c27 19 37 54 33 94H67c-4-40 6-75 33-94z" fill="url(#kz-body)" stroke="#16a34a" strokeWidth="5" />
+        <rect x="70" y="128" width="60" height="10" rx="5" fill="#fb7185" />
+        {/* sprout growing from the nose */}
+        <path d="M100 48q-1-14 2-26" stroke="#16a34a" strokeWidth="5" fill="none" strokeLinecap="round" />
+        <path d="M101 30c-12-14-30-13-37-3 13 9 28 10 37 3z" fill="#86efac" stroke="#16a34a" strokeWidth="4" />
+        <path d="M102 24c9-15 28-17 36-8-11 10-27 13-36 8z" fill="#4ade80" stroke="#16a34a" strokeWidth="4" />
+        {/* porthole face */}
+        <circle cx="100" cy="94" r="23" fill="#fcd34d" stroke="#f59e0b" strokeWidth="5" />
+        <ellipse cx="92" cy="90" rx="4.5" ry="5.5" fill="#2d2a4a" />
+        <ellipse cx="108" cy="90" rx="4.5" ry="5.5" fill="#2d2a4a" />
+        <circle cx="93.5" cy="88" r="1.6" fill="#fff" />
+        <circle cx="109.5" cy="88" r="1.6" fill="#fff" />
+        <ellipse cx="85" cy="100" rx="4.5" ry="3" fill="#fb7185" opacity=".7" />
+        <ellipse cx="115" cy="100" rx="4.5" ry="3" fill="#fb7185" opacity=".7" />
+        <path d="M94 99q6 7 12 0z" fill="#2d2a4a" stroke="#2d2a4a" strokeWidth="2.5" />
+      </g>
       {/* sparkles */}
-      <path d="M170 20l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#fff" />
-      <circle cx="186" cy="68" r="5" fill="#7dd3fc" />
-      <circle cx="16" cy="52" r="6" fill="#86efac" />
+      <path d="M34 34l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff" />
+      <circle cx="176" cy="96" r="6" fill="#fcd34d" />
+      <circle cx="30" cy="150" r="5" fill="#7dd3fc" />
+      <circle cx="160" cy="174" r="4" fill="#fff" />
     </svg>
   );
 }
