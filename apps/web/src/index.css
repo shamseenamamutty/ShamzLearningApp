@@ -54,3 +54,11 @@ button { touch-action: manipulation; user-select: none; -webkit-user-select: non
   text-shadow: 0 0.08em 0 rgba(45, 42, 74, 0.25);
   letter-spacing: -0.01em;
 }
+
+/* Slogan keywords: wordmark colours with a slim white outline. */
+.kidzly-slogan-word {
+  -webkit-text-stroke: 0.16em #fff;
+  paint-order: stroke fill;
+}
+@keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.9; } }
+.animate-twinkle { animation: twinkle 3s ease-in-out infinite; }

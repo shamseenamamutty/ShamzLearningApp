@@ -15,8 +15,13 @@
     "grownUps": "Grown-ups"
   },
   "welcome": {
-    "tagline": "Where little explorers take off and grow!",
-    "pickLanguage": "Which language do you want to learn?",
+    "tagline": "Where little <c1>explorers</c1> <c2>take off</c2> and <c3>grow</c3>!",
+    "tiles": {
+      "listen": "Listen",
+      "learn": "Learn",
+      "play": "Play",
+      "earn": "Earn"
+    },
     "arabic": "Arabic",
     "hindi": "Hindi",
     "comingSoon": "Coming soon",

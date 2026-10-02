@@ -1,13 +1,14 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { sfx } from '@/engine/audio';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'success' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'success' | 'danger' | 'sunny';
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-grape-600 text-white shadow-[0_6px_0_#5b21b6] active:shadow-[0_2px_0_#5b21b6]',
   secondary: 'bg-white text-grape-700 shadow-[0_6px_0_#ddd6fe] active:shadow-[0_2px_0_#ddd6fe]',
   ghost: 'bg-transparent text-grape-700',
   success: 'bg-leaf-500 text-white shadow-[0_6px_0_#15803d] active:shadow-[0_2px_0_#15803d]',
+  sunny: 'bg-sun-500 text-white shadow-[0_6px_0_#b45309] active:shadow-[0_2px_0_#b45309]',
   danger: 'bg-coral-500 text-white shadow-[0_6px_0_#be123c] active:shadow-[0_2px_0_#be123c]',
 };
 
