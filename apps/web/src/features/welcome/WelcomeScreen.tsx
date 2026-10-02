@@ -22,7 +22,7 @@ export default function WelcomeScreen() {
             <Logo />
           </button>
         </h1>
-        <p className="text-xl font-bold opacity-95">{t('welcome.tagline')}</p>
+        <p className="text-balance text-xl font-bold opacity-95">{t('welcome.tagline')}</p>
       </div>
 
       <div className="w-full rounded-blob bg-white/95 p-5 text-ink shadow-xl">
