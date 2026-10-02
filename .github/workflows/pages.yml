@@ -1,4 +1,14 @@
-name: Deploy web app to GitHub Pages
+name: Deploy web app to public site repo
+
+# The source repo stays private. Only the compiled site (apps/web/dist) is pushed to a
+# separate PUBLIC repo, which serves it with GitHub Pages from its gh-pages branch.
+#
+# One-time setup:
+#   1. Create the public repo named in SITE_REPO below (empty is fine).
+#   2. Create a fine-grained token with "Contents: Read and write" on that public repo only,
+#      and save it in THIS repo as the Actions secret SITE_DEPLOY_TOKEN.
+#   3. After the first successful run, in the public repo: Settings → Pages →
+#      Source "Deploy from a branch", branch gh-pages, folder / (root).
 
 on:
   push:
@@ -8,15 +18,17 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  SITE_OWNER: shamseenamamutty
+  SITE_REPO: ShamzLearningApp-site
+
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: apps/web } }
     steps:
@@ -24,23 +36,19 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
       - run: npm ci
-      - name: Build for the project Pages subpath
+      - name: Build for the public repo's Pages subpath
         run: npm run build
         env:
           # Runs fully offline (local-first): no VITE_API_URL, so no backend is required for this demo.
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_BASE_PATH: /${{ env.SITE_REPO }}/
       - name: SPA fallback so client-side routes survive a hard refresh
         run: cp dist/index.html dist/404.html
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with: { path: apps/web/dist }
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish dist to the public repo's gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.SITE_DEPLOY_TOKEN }}
+          external_repository: ${{ env.SITE_OWNER }}/${{ env.SITE_REPO }}
+          publish_branch: gh-pages
+          publish_dir: apps/web/dist
+          force_orphan: true
+          commit_message: "Deploy ${{ github.sha }}"
