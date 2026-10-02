@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { speak } from '@/engine/audio';
 import { useStore } from '@/lib/store';
 import { Button } from '@/ui/Button';
+import { Logo } from '@/ui/Logo';
 import { ScriptText } from '@/ui/ScriptText';
 
 /** Screen 1 — Splash / Welcome: mascots and language picker. */
@@ -16,15 +17,11 @@ export default function WelcomeScreen() {
   return (
     <div className="flex h-full flex-col items-center justify-between bg-gradient-to-b from-grape-600 via-grape-400 to-sun-300 px-6 pb-safe pt-safe text-white">
       <div className="mt-8 flex flex-col items-center gap-2 text-center">
-        <div className="flex items-end gap-2">
-          <button type="button" aria-label="Jamal" className="text-8xl animate-bob" onClick={() => speak(t('welcome.greeting'))}>
-            🐪
+        <h1>
+          <button type="button" aria-label="Kidzly" onClick={() => speak(t('welcome.greeting'))}>
+            <Logo />
           </button>
-          <span className="text-6xl animate-bob opacity-80" style={{ animationDelay: '0.6s' }}>
-            🐘
-          </span>
-        </div>
-        <h1 className="text-6xl font-extrabold tracking-tight drop-shadow">KidsLang</h1>
+        </h1>
         <p className="text-xl font-bold opacity-95">{t('welcome.tagline')}</p>
       </div>
 

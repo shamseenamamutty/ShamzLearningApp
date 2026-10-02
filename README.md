@@ -1,4 +1,4 @@
-# KidsLang
+# Kidzly
 
 A playful, ad-free app where children aged 4–10 learn **Arabic** (and later **Hindi**) from the very first letter.
 Each lesson runs **Learn → Play → Check**, and the next lesson unlocks only when the child has mastered this one.

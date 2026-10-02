@@ -1,1 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#7c3aed"/><circle cx="256" cy="256" r="170" fill="#fef9f0"/><text x="256" y="330" font-size="220" text-anchor="middle" font-family="serif" fill="#7c3aed">ب</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Kidzly</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g transform="translate(56 50) scale(2)">
+    <path d="M100 26c46 0 80 29 80 68s-34 68-80 68c-11 0-21-2-30-5l-32 17 9-30C33 134 20 115 20 94c0-39 34-68 80-68z" fill="url(#body)" stroke="#f59e0b" stroke-width="5" stroke-linejoin="round"/>
+    <ellipse cx="66" cy="56" rx="20" ry="10" fill="#fff" opacity=".55" transform="rotate(-20 66 56)"/>
+    <ellipse cx="76" cy="90" rx="11" ry="14" fill="#2d2a4a"/>
+    <ellipse cx="124" cy="90" rx="11" ry="14" fill="#2d2a4a"/>
+    <circle cx="80" cy="84" r="4.5" fill="#fff"/>
+    <circle cx="128" cy="84" r="4.5" fill="#fff"/>
+    <ellipse cx="56" cy="112" rx="11" ry="7" fill="#fb7185" opacity=".65"/>
+    <ellipse cx="144" cy="112" rx="11" ry="7" fill="#fb7185" opacity=".65"/>
+    <path d="M84 110q16 22 32 0z" fill="#2d2a4a" stroke="#2d2a4a" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M92 118q8 6 16 0q-8-7-16 0z" fill="#fb7185"/>
+    <path d="M170 20l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#fff"/>
+    <circle cx="186" cy="68" r="5" fill="#7dd3fc"/>
+    <circle cx="16" cy="52" r="6" fill="#86efac"/>
+  </g>
+</svg>

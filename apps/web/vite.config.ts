@@ -16,8 +16,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'KidsLang',
-        short_name: 'KidsLang',
+        name: 'Kidzly',
+        short_name: 'Kidzly',
         description: 'Learn Arabic and Hindi, one letter at a time.',
         theme_color: '#7c3aed',
         background_color: '#fef9f0',

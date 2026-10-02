@@ -5,7 +5,7 @@ Guidance for Claude Code when working in this repository. Read this first; the f
 
 ## Project summary
 
-KidsLang is an interactive language-learning app for children aged 4–10, teaching Arabic and Hindi from the first letter upward.
+Kidzly (code name KidsLang) is an interactive language-learning app for children aged 4–10, teaching Arabic and Hindi from the first letter upward.
 
 - Now: a mobile-look, responsive PWA (portrait-first).
 - Later: iOS/Android apps built by wrapping the same web app with Capacitor. Do not introduce anything that blocks this path.

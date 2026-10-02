@@ -46,3 +46,11 @@ button { touch-action: manipulation; user-select: none; -webkit-user-select: non
 
 @keyframes balloonUp { 0% { transform: translateY(0); opacity: 0; } 8% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-280px); opacity: 0; } }
 [dir='rtl'] { --dir: -1; }
+
+/* Kidzly wordmark: chunky white outline + soft drop shadow so each coloured letter pops on any background. */
+.kidzly-letter {
+  -webkit-text-stroke: 0.14em #fff;
+  paint-order: stroke fill;
+  text-shadow: 0 0.08em 0 rgba(45, 42, 74, 0.25);
+  letter-spacing: -0.01em;
+}

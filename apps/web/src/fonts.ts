@@ -1,5 +1,7 @@
+// Fredoka (latin 700) is the Kidzly wordmark font only.
 // Self-hosted, approved fonts (Baloo 2 / Baloo Bhaijaan 2 / Noto Naskh Arabic / Noto Sans Devanagari).
 // Bundled so lessons render correctly offline and inside the future Capacitor app.
+import '@fontsource/fredoka/latin-700.css';
 import '@fontsource/baloo-2/latin-400.css';
 import '@fontsource/baloo-2/latin-500.css';
 import '@fontsource/baloo-2/latin-700.css';

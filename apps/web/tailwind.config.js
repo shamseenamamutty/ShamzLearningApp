@@ -4,6 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        brand: ['Fredoka', '"Baloo 2"', 'system-ui', 'sans-serif'],
         ui: ['"Baloo 2"', 'system-ui', 'sans-serif'],
         arabic: ['"Baloo Bhaijaan 2"', '"Noto Naskh Arabic"', 'serif'],
         naskh: ['"Noto Naskh Arabic"', 'serif'],
