@@ -3,7 +3,7 @@
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { passGate, playLesson, solveCurrent } from './kidslang-driver.mjs';
+import { passGate, playLesson, signUp, solveCurrent } from './kidslang-driver.mjs';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:4173';
 const OUT = fileURLToPath(new URL('../../../docs/screens/', import.meta.url));
@@ -36,11 +36,7 @@ await shot('01-welcome');
 
 // 2. Parent sign-up with consent
 await page.getByRole('button', { name: /Let's go/ }).click();
-await page.getByLabel('Email').fill('parent@example.com');
-await page.getByLabel('Password').fill('kidslang-demo');
-await page.getByRole('checkbox').check();
-await shot('02-parent-signup');
-await page.getByRole('button', { name: 'Create account' }).click();
+await signUp(page, { shot: (n) => shot(n === 'signup' ? '02-parent-signup' : '02b-verify-codes') });
 
 // Parent gate (hold, then multiplication)
 await page.getByRole('button', { name: /hold for 3 seconds/i }).waitFor();

@@ -1,6 +1,9 @@
 namespace KidsLang.Application.Contracts;
 
-public sealed record RegisterRequest(string Email, string Password, bool ConsentGiven, string? Locale);
+public sealed record StartRegistrationRequest(string Name, string Email, string Phone, string Password, string Pin, bool ConsentGiven, string? Locale);
+public sealed record StartRegistrationResponse(Guid RegistrationId, string MaskedPhone, string MaskedEmail, DateTime ExpiresAtUtc);
+public sealed record VerifyRegistrationRequest(Guid RegistrationId, string PhoneCode, string EmailCode);
+public sealed record ResendRegistrationRequest(Guid RegistrationId);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 public sealed record AuthResponse(string AccessToken, string RefreshToken, Guid ParentId);

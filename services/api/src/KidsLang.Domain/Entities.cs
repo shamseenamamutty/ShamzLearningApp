@@ -7,12 +7,41 @@ public sealed class Parent
     public Guid Id { get; set; } = Guid.NewGuid();
     /// <summary>Always lower-case (collation differs between SQLite and PostgreSQL).</summary>
     public string Email { get; set; } = "";
+    public string Name { get; set; } = "";
+    /// <summary>E.164, e.g. +971501234567.</summary>
+    public string Phone { get; set; } = "";
     public string PasswordHash { get; set; } = "";
+    /// <summary>Hash of the 4-digit parent PIN (same hasher as the password).</summary>
+    public string PinHash { get; set; } = "";
+    public DateTime? EmailVerifiedAtUtc { get; set; }
+    public DateTime? PhoneVerifiedAtUtc { get; set; }
     public DateTime ConsentGivenAtUtc { get; set; }
     public string Locale { get; set; } = "en";
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public List<ChildProfile> Children { get; set; } = [];
     public List<RefreshToken> RefreshTokens { get; set; } = [];
+}
+
+/// <summary>
+/// A sign-up waiting for its two one-time codes (WhatsApp + email). Becomes a Parent once both are
+/// verified; codes are stored hashed, expire after 10 minutes and allow 5 wrong tries.
+/// </summary>
+public sealed class PendingRegistration
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Phone { get; set; } = "";
+    public string PasswordHash { get; set; } = "";
+    public string PinHash { get; set; } = "";
+    public string Locale { get; set; } = "en";
+    public string EmailCodeHash { get; set; } = "";
+    public string PhoneCodeHash { get; set; } = "";
+    public int FailedAttempts { get; set; }
+    public int Resends { get; set; }
+    public DateTime CodesSentAtUtc { get; set; }
+    public DateTime ExpiresAtUtc { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }
 
 public sealed class RefreshToken

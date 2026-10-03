@@ -27,13 +27,20 @@ describe('api client', () => {
     await expect(api.login('a@b.com', 'x')).rejects.toThrow();
   });
 
-  it('posts registration with the exact contract shape', async () => {
-    const fetchMock = mockFetch(() => json({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' }));
+  it('posts the two sign-up steps with the exact contract shape', async () => {
+    const fetchMock = mockFetch((url) =>
+      String(url).endsWith('/start')
+        ? json({ registrationId: 'r1', maskedPhone: '+971•••567', maskedEmail: 'p•••@example.com', expiresAtUtc: 'x' })
+        : json({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' }),
+    );
     const api = await import('./api');
-    const res = await api.register('Parent@Example.com', 'secret123', true, 'en');
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:5080/api/v1/auth/register',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'Parent@Example.com', password: 'secret123', consentGiven: true, locale: 'en' }) }),
+    const req = { name: 'Amina', email: 'parent@example.com', phone: '+971501234567', password: 'secret123', pin: '4821', consentGiven: true };
+    await api.startRegistration(req);
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:5080/api/v1/auth/register/start', expect.objectContaining({ method: 'POST', body: JSON.stringify(req) }));
+    const res = await api.verifyRegistration('r1', '123456', '654321');
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:5080/api/v1/auth/register/verify',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ registrationId: 'r1', phoneCode: '123456', emailCode: '654321' }) }),
     );
     expect(res).toEqual({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' });
   });

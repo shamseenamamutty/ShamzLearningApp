@@ -6,6 +6,7 @@ import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { Screen } from '@/ui/Screen';
 import { PIN_PATTERN, ParentPinDialog, pinInput } from './ParentPinDialog';
+import { DIAL_CODES, toE164 } from './phone';
 
 const input = 'min-h-tap w-full rounded-2xl border-2 border-grape-200 bg-white px-4 text-lg outline-none focus:border-grape-500';
 
@@ -16,9 +17,13 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
   const location = useLocation();
   /** Arrived from "Forgot PIN?" — after the password check, ask for a new PIN instead of going straight in. */
   const resetPin = (location.state as { resetPin?: boolean } | null)?.resetPin === true;
-  const register = useStore((s) => s.registerParent);
+  const startSignUp = useStore((s) => s.startSignUp);
   const signIn = useStore((s) => s.signIn);
   const adminSignIn = useStore((s) => s.adminSignIn);
+  const [name, setName] = useState('');
+  const [dial, setDial] = useState<string>(DIAL_CODES[0].code);
+  const [phone, setPhone] = useState('');
+  const [sending, setSending] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [consent, setConsent] = useState(false);
@@ -41,14 +46,17 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (mode === 'signup') {
+      if (!name.trim()) return setError(t('signup.nameRequired'));
+      const fullPhone = toE164(dial, phone);
+      if (!fullPhone) return setError(t('signup.phoneInvalid'));
       if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || !consent) return setError(t('auth.invalid'));
-      // The PIN is optional; if any digit is typed, it must be 4 digits and match the confirmation.
-      if (pin || pinConfirm) {
-        if (!PIN_PATTERN.test(pin)) return setError(t('pin.invalid'));
-        if (pin !== pinConfirm) return setError(t('pin.mismatch'));
-      }
-      await register(email, password, pin || undefined);
-      navigate('/profiles/new');
+      if (!PIN_PATTERN.test(pin)) return setError(t('pin.invalid'));
+      if (pin !== pinConfirm) return setError(t('pin.mismatch'));
+      setSending(true);
+      const res = await startSignUp({ name, email, phone: fullPhone, password, pin });
+      setSending(false);
+      if (!res.ok) return setError(t(`signup.error.${res.error}`));
+      navigate('/signup/verify');
     } else {
       if (!(await signIn(email, password))) return setError(t('auth.wrongCredentials'));
       if (resetPin) return setNewPinOpen(true);
@@ -60,6 +68,42 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
     <Screen title={mode === 'signup' ? t('auth.signUpTitle') : t('auth.signInTitle')} back="/" bg="bg-grape-50">
       <form onSubmit={submit} className="flex flex-col gap-4 pt-4" noValidate>
         <div className="mb-2 flex justify-center text-7xl">👨‍👩‍👧</div>
+        {mode === 'signup' && (
+          <>
+            <label className="flex flex-col gap-1 font-bold">
+              {t('signup.name')}
+              <input className={input} type="text" autoComplete="name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+            </label>
+            <div className="flex flex-col gap-1 font-bold">
+              <label htmlFor="signup-phone">{t('signup.phone')}</label>
+              <div dir="ltr" className="flex gap-2">
+                <select
+                  aria-label={t('signup.countryCode')}
+                  className="min-h-tap w-28 shrink-0 rounded-2xl border-2 border-grape-200 bg-white px-2 text-lg outline-none focus:border-grape-500"
+                  value={dial}
+                  onChange={(e) => setDial(e.target.value)}
+                >
+                  {DIAL_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.code}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  id="signup-phone"
+                  className={input}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="50 123 4567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <span className="text-sm font-medium text-ink/60">💬 {t('signup.phoneHint')}</span>
+            </div>
+          </>
+        )}
         <label className="flex flex-col gap-1 font-bold">
           {t('auth.email')}
           <input className={input} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -77,9 +121,9 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
         </label>
         {mode === 'signup' && (
           <fieldset className="flex flex-col gap-2 rounded-2xl bg-white p-4">
-            <legend className="sr-only">{t('pin.signupTitle')}</legend>
-            <p className="font-bold">🔢 {t('pin.signupTitle')}</p>
-            <p className="text-sm font-medium text-ink/60">{t('pin.signupHint')}</p>
+            <legend className="sr-only">{t('signup.pinTitle')}</legend>
+            <p className="font-bold">🔢 {t('signup.pinTitle')}</p>
+            <p className="text-sm font-medium text-ink/60">{t('signup.pinHint')}</p>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1 text-sm font-bold">
                 {t('pin.label')}
@@ -119,8 +163,8 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
             {error}
           </p>
         )}
-        <Button type="submit" block>
-          {mode === 'signup' ? t('auth.createAccount') : t('auth.signIn')}
+        <Button type="submit" block disabled={sending}>
+          {mode === 'signup' ? (sending ? t('signup.sending') : t('signup.sendCodes')) : t('auth.signIn')}
         </Button>
         <Button variant="ghost" block onClick={() => navigate(mode === 'signup' ? '/signin' : '/signup')}>
           {mode === 'signup' ? t('auth.haveAccount') : t('auth.noAccount')}

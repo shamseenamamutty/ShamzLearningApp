@@ -2,8 +2,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const apiMocks = vi.hoisted(() => ({
   apiEnabled: true,
-  register: vi.fn(),
+  startRegistration: vi.fn(),
+  resendRegistration: vi.fn(),
+  verifyRegistration: vi.fn(),
   login: vi.fn(),
+  ApiError: class ApiError extends Error {
+    constructor(
+      public status: number,
+      message: string,
+    ) {
+      super(message);
+    }
+  },
   createChild: vi.fn(),
   deleteChild: vi.fn(),
   submitQuiz: vi.fn(),
@@ -17,34 +27,58 @@ vi.mock('./api', () => apiMocks);
 const { useStore } = await import('./store');
 
 const reset = () => {
-  useStore.setState({ parent: null, parentSignedIn: false, backendAuth: null, children: [], activeChildId: null, data: {}, settings: {} });
+  useStore.setState({ parent: null, parentSignedIn: false, backendAuth: null, children: [], activeChildId: null, data: {}, settings: {}, pendingSignUp: null });
   Object.values(apiMocks).forEach((fn) => typeof fn === 'function' && 'mockReset' in fn && fn.mockReset());
   apiMocks.createChild.mockResolvedValue({});
   apiMocks.deleteChild.mockResolvedValue(undefined);
 };
 
+const DETAILS = { name: 'Amina', email: 'Parent@Example.com', phone: '+971501234567', password: 'secret123', pin: '4821' };
+
+/** Full sign-up against the (mocked) backend: start → codes → verify. */
+async function signUpWithBackend() {
+  apiMocks.startRegistration.mockResolvedValue({ registrationId: 'r1', maskedPhone: '+971•••567', maskedEmail: 'p•••@example.com', expiresAtUtc: new Date(Date.now() + 600_000).toISOString() });
+  apiMocks.verifyRegistration.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' });
+  expect(await useStore.getState().startSignUp(DETAILS)).toEqual({ ok: true });
+  expect(await useStore.getState().verifySignUp('123456', '654321')).toBe('ok');
+}
+
 describe('store <-> backend sync (mocked api module)', () => {
   beforeEach(reset);
   afterEach(() => vi.clearAllMocks());
 
-  it('stores backend tokens after a successful register, but signs in locally either way', async () => {
-    apiMocks.register.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' });
-    await useStore.getState().registerParent('Parent@Example.com', 'secret123');
-    expect(useStore.getState().parentSignedIn).toBe(true);
-    expect(useStore.getState().backendAuth).toEqual({ access: 'a', refresh: 'r' });
-    expect(apiMocks.register).toHaveBeenCalledWith('parent@example.com', 'secret123', true);
+  it('sends sign-up details to the backend, then signs in with its tokens once both codes verify', async () => {
+    await signUpWithBackend();
+    expect(apiMocks.startRegistration).toHaveBeenCalledWith(expect.objectContaining({ name: 'Amina', email: 'parent@example.com', phone: '+971501234567', pin: '4821', consentGiven: true }));
+    expect(apiMocks.verifyRegistration).toHaveBeenCalledWith('r1', '123456', '654321');
+    const { parentSignedIn, backendAuth, parent, pendingSignUp } = useStore.getState();
+    expect(parentSignedIn).toBe(true);
+    expect(backendAuth).toEqual({ access: 'a', refresh: 'r' });
+    expect(parent).toMatchObject({ name: 'Amina', phone: '+971501234567', email: 'parent@example.com' });
+    expect(parent!.pinHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(pendingSignUp).toBeNull();
   });
 
-  it('still signs in locally when the backend is unreachable', async () => {
-    apiMocks.register.mockRejectedValue(new Error('offline'));
-    await useStore.getState().registerParent('a@b.com', 'secret123');
-    expect(useStore.getState().parentSignedIn).toBe(true);
-    expect(useStore.getState().backendAuth).toBeNull();
+  it('does not create the account until the codes are verified, and reports which code was wrong', async () => {
+    apiMocks.startRegistration.mockResolvedValue({ registrationId: 'r1', maskedPhone: 'x', maskedEmail: 'y', expiresAtUtc: '' });
+    await useStore.getState().startSignUp(DETAILS);
+    expect(useStore.getState().parentSignedIn).toBe(false);
+    apiMocks.verifyRegistration.mockRejectedValue(new apiMocks.ApiError(401, '{"detail":"The WhatsApp code is not right."}'));
+    expect(await useStore.getState().verifySignUp('000000', '654321')).toBe('wrong-phone');
+    expect(useStore.getState().parent).toBeNull();
+  });
+
+  it('maps an existing account and a missing sender to clear errors', async () => {
+    apiMocks.startRegistration.mockRejectedValueOnce(new apiMocks.ApiError(409, 'exists'));
+    expect(await useStore.getState().startSignUp(DETAILS)).toEqual({ ok: false, error: 'exists' });
+    apiMocks.startRegistration.mockRejectedValueOnce(new apiMocks.ApiError(503, 'no sender'));
+    expect(await useStore.getState().startSignUp(DETAILS)).toEqual({ ok: false, error: 'unavailable' });
+    apiMocks.startRegistration.mockRejectedValueOnce(new TypeError('offline'));
+    expect(await useStore.getState().startSignUp(DETAILS)).toEqual({ ok: false, error: 'network' });
   });
 
   it('mirrors a new child to the backend once signed in there', async () => {
-    apiMocks.register.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' });
-    await useStore.getState().registerParent('a@b.com', 'secret123');
+    await signUpWithBackend();
     apiMocks.createChild.mockResolvedValue({});
     const id = useStore.getState().addChild({ nickname: 'Sara', ageBand: '4-6', avatar: { animal: '🦊', color: '#fff', item: 'none' }, pinHash: null, courses: ['ar'] });
     await Promise.resolve(); // let the fire-and-forget call settle
@@ -57,8 +91,7 @@ describe('store <-> backend sync (mocked api module)', () => {
   });
 
   it('upgrades a locally-missed mastery when the server confirms it, without touching the returned result', async () => {
-    apiMocks.register.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' });
-    await useStore.getState().registerParent('a@b.com', 'secret123');
+    await signUpWithBackend();
     const childId = useStore.getState().addChild({ nickname: 'Sara', ageBand: '4-6', avatar: { animal: '🦊', color: '#fff', item: 'none' }, pinHash: null, courses: ['ar'] });
     useStore.getState().selectChild(childId);
 
@@ -71,8 +104,7 @@ describe('store <-> backend sync (mocked api module)', () => {
   });
 
   it('never downgrades a lesson the client already mastered, even if the server disagrees', async () => {
-    apiMocks.register.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' });
-    await useStore.getState().registerParent('a@b.com', 'secret123');
+    await signUpWithBackend();
     const childId = useStore.getState().addChild({ nickname: 'Sara', ageBand: '4-6', avatar: { animal: '🦊', color: '#fff', item: 'none' }, pinHash: null, courses: ['ar'] });
     useStore.getState().selectChild(childId);
 
@@ -85,8 +117,7 @@ describe('store <-> backend sync (mocked api module)', () => {
   });
 
   it('flushQueue sends queued attempts and clears the accepted ones', async () => {
-    apiMocks.register.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', parentId: 'p1' });
-    await useStore.getState().registerParent('a@b.com', 'secret123');
+    await signUpWithBackend();
     const childId = useStore.getState().addChild({ nickname: 'Sara', ageBand: '4-6', avatar: { animal: '🦊', color: '#fff', item: 'none' }, pinHash: null, courses: ['ar'] });
     useStore.getState().selectChild(childId);
     useStore.getState().recordAnswer('act-1', 'ar-letter-alif', true);

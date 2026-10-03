@@ -1,17 +1,38 @@
 using FluentValidation;
 using KidsLang.Application.Contracts;
+using KidsLang.Application.UseCases;
 
 namespace KidsLang.Application.Validation;
 
-public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest>
+public sealed class StartRegistrationRequestValidator : AbstractValidator<StartRegistrationRequest>
 {
-    public RegisterRequestValidator()
+    public StartRegistrationRequestValidator()
     {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(80);
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(254);
+        // E.164: + then 8–15 digits (spaces/dashes are stripped by the service before this point too).
+        RuleFor(x => x.Phone).NotEmpty().Must(p => System.Text.RegularExpressions.Regex.IsMatch(Registration.NormalizePhone(p), @"^\+[1-9]\d{7,14}$"))
+            .WithMessage("Enter the phone number with its country code, e.g. +971 50 123 4567.");
         RuleFor(x => x.Password).NotEmpty().MinimumLength(8).MaximumLength(128);
+        RuleFor(x => x.Pin).Matches(@"^\d{4}$").WithMessage("The PIN must be exactly 4 digits.");
         RuleFor(x => x.ConsentGiven).Equal(true).WithMessage("Parental consent is required.");
         RuleFor(x => x.Locale).Must(l => l is null or "en" or "ar" or "hi");
     }
+}
+
+public sealed class VerifyRegistrationRequestValidator : AbstractValidator<VerifyRegistrationRequest>
+{
+    public VerifyRegistrationRequestValidator()
+    {
+        RuleFor(x => x.RegistrationId).NotEmpty();
+        RuleFor(x => x.PhoneCode).Matches(@"^\d{6}$");
+        RuleFor(x => x.EmailCode).Matches(@"^\d{6}$");
+    }
+}
+
+public sealed class ResendRegistrationRequestValidator : AbstractValidator<ResendRegistrationRequest>
+{
+    public ResendRegistrationRequestValidator() => RuleFor(x => x.RegistrationId).NotEmpty();
 }
 
 public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>

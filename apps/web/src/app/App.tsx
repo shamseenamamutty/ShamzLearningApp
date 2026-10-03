@@ -13,6 +13,7 @@ const Welcome = lazy(() => import('@/features/welcome/WelcomeScreen'));
 const Auth = lazy(() => import('@/features/auth/AuthScreen'));
 const Enroll = lazy(() => import('@/features/auth/EnrollScreen'));
 const EnrollVerify = lazy(() => import('@/features/auth/EnrollVerifyScreen'));
+const VerifySignUp = lazy(() => import('@/features/auth/VerifySignUpScreen'));
 const MemberSignIn = lazy(() => import('@/features/auth/MemberSignInScreen'));
 const Profiles = lazy(() => import('@/features/profiles/ProfilesScreen'));
 const NewProfile = lazy(() => import('@/features/profiles/NewProfileScreen'));
@@ -79,6 +80,7 @@ function Shell() {
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/signup" element={<Auth mode="signup" />} />
+          <Route path="/signup/verify" element={<VerifySignUp />} />
           <Route path="/signin" element={<Auth mode="signin" />} />
           <Route path="/signin/pin" element={<MemberSignIn />} />
           <Route path="/enroll" element={<Enroll />} />

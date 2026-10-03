@@ -11,6 +11,11 @@ import { emptyChildData, localDate, touchStreak, withDefaults, type ChildData, t
 
 export interface Parent {
   email: string;
+  name?: string;
+  /** E.164, e.g. +971501234567. */
+  phone?: string;
+  /** Set once the WhatsApp + email codes were confirmed at sign-up. */
+  verifiedAt?: string;
   passwordHash: string;
   /** Optional 4-digit parent PIN; when set, "Let's go" always asks for it before opening the family. */
   pinHash?: string | null;
@@ -80,6 +85,47 @@ interface PendingEnrollment {
 
 const ENROLLMENT_CODE_TTL_MS = 30 * 60 * 1000;
 
+export interface SignUpDetails {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  pin: string;
+}
+
+/**
+ * A sign-up waiting for its WhatsApp + email codes. `server` mode: the backend sent them.
+ * `demo` mode (no backend deployed yet, see docs/PENDING-DECISIONS.md): codes are made on the
+ * device and shown on screen instead of being sent.
+ */
+export interface PendingSignUp {
+  mode: 'server' | 'demo';
+  registrationId: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  passwordHash: string;
+  pinHash: string;
+  maskedPhone: string;
+  maskedEmail: string;
+  sentAt: string;
+  expiresAt: string;
+  failedAttempts: number;
+  demoCodes: { phone: string; email: string } | null;
+}
+
+export type StartSignUpResult = { ok: true } | { ok: false; error: 'exists' | 'unavailable' | 'network' };
+export type VerifySignUpResult = 'ok' | 'wrong-phone' | 'wrong-email' | 'wrong-both' | 'expired' | 'network';
+
+const SIGNUP_CODE_TTL_MS = 10 * 60 * 1000;
+const SIGNUP_MAX_FAILED = 5;
+const sixDigits = () => String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0');
+export const maskPhone = (p: string) => (p.length <= 4 ? p : `${p.slice(0, 4)}•••${p.slice(-3)}`);
+export const maskEmail = (e: string) => {
+  const at = e.indexOf('@');
+  return at <= 1 ? e : `${e[0]}•••${e.slice(at)}`;
+};
+
 interface State {
   parent: Parent | null;
   parentSignedIn: boolean;
@@ -91,13 +137,22 @@ interface State {
   /** Caregivers the admin has enrolled for quick PIN sign-in on this device (keyed by lowercase email). */
   enrolledMembers: Record<string, EnrolledMember>;
   pendingEnrollments: Record<string, PendingEnrollment>;
+  pendingSignUp: PendingSignUp | null;
 
   /**
    * Local-first auth (works fully offline). When `VITE_API_URL` is configured, both also make a
    * best-effort call to the real backend (services/api) and store its tokens on success; a failed
    * or unreachable backend never blocks the local account — see docs/SCREENS.md's placeholder table.
    */
-  registerParent(email: string, password: string, pin?: string): Promise<void>;
+  /** Creates the parent account on this device (called once sign-up codes are verified). */
+  registerParent(email: string, password: string, pin?: string, profile?: { name: string; phone: string }): Promise<void>;
+  /** Sign-up step 1: sends a WhatsApp code to the phone and an email code (or makes demo codes). */
+  startSignUp(details: SignUpDetails): Promise<StartSignUpResult>;
+  /** Sends fresh codes for the pending sign-up. */
+  resendSignUpCodes(): Promise<boolean>;
+  /** Sign-up step 2: both codes must match; then the account is created and signed in. */
+  verifySignUp(phoneCode: string, emailCode: string): Promise<VerifySignUpResult>;
+  cancelSignUp(): void;
   /** Sets (or replaces) the parent PIN for the account on this device. */
   setParentPin(pin: string): Promise<void>;
   /** Checks the parent PIN; on success the parent is signed in on this device. */
@@ -161,24 +216,139 @@ export const useStore = create<State>()(
       settings: {},
       enrolledMembers: {},
       pendingEnrollments: {},
+      pendingSignUp: null,
 
-      registerParent: async (email, password, pin) => {
+      registerParent: async (email, password, pin, profile) => {
         const passwordHash = await hashSecret(password);
         const pinHash = pin ? await hashSecret(`pin:${pin}`) : null;
         const cleanEmail = email.trim().toLowerCase();
         set({
-          parent: { email: cleanEmail, passwordHash, pinHash, consentGivenAt: new Date().toISOString(), createdAt: new Date().toISOString() },
+          parent: {
+            email: cleanEmail,
+            ...(profile ? { name: profile.name, phone: profile.phone, verifiedAt: new Date().toISOString() } : {}),
+            passwordHash,
+            pinHash,
+            consentGivenAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+          },
           parentSignedIn: true,
         });
-        if (!api.apiEnabled) return;
+      },
+
+      startSignUp: async (d) => {
+        const email = d.email.trim().toLowerCase();
+        const base = {
+          name: d.name.trim(),
+          email,
+          phone: d.phone,
+          passwordHash: await hashSecret(d.password),
+          pinHash: await hashSecret(`pin:${d.pin}`),
+          failedAttempts: 0,
+          sentAt: new Date().toISOString(),
+        };
+        if (!api.apiEnabled) {
+          set({
+            pendingSignUp: {
+              ...base,
+              mode: 'demo',
+              registrationId: null,
+              maskedPhone: maskPhone(d.phone),
+              maskedEmail: maskEmail(email),
+              expiresAt: new Date(Date.now() + SIGNUP_CODE_TTL_MS).toISOString(),
+              demoCodes: { phone: sixDigits(), email: sixDigits() },
+            },
+          });
+          return { ok: true };
+        }
         try {
-          const auth = await api.register(cleanEmail, password, true);
-          set({ backendAuth: { access: auth.accessToken, refresh: auth.refreshToken } });
-        } catch {
-          // Offline, API down, or this email is already registered server-side from elsewhere.
-          // The local account still works — see the "web app doesn't call the API yet" note in docs/SCREENS.md.
+          const res = await api.startRegistration({ name: base.name, email, phone: d.phone, password: d.password, pin: d.pin, consentGiven: true });
+          set({
+            pendingSignUp: {
+              ...base,
+              mode: 'server',
+              registrationId: res.registrationId,
+              maskedPhone: res.maskedPhone,
+              maskedEmail: res.maskedEmail,
+              expiresAt: res.expiresAtUtc,
+              demoCodes: null,
+            },
+          });
+          return { ok: true };
+        } catch (e) {
+          const status = e instanceof api.ApiError ? e.status : 0;
+          return { ok: false, error: status === 409 ? 'exists' : status === 503 ? 'unavailable' : 'network' };
         }
       },
+
+      resendSignUpCodes: async () => {
+        const p = get().pendingSignUp;
+        if (!p) return false;
+        if (p.mode === 'demo') {
+          set({
+            pendingSignUp: {
+              ...p,
+              failedAttempts: 0,
+              sentAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + SIGNUP_CODE_TTL_MS).toISOString(),
+              demoCodes: { phone: sixDigits(), email: sixDigits() },
+            },
+          });
+          return true;
+        }
+        try {
+          const res = await api.resendRegistration(p.registrationId!);
+          set({ pendingSignUp: { ...p, failedAttempts: 0, sentAt: new Date().toISOString(), expiresAt: res.expiresAtUtc } });
+          return true;
+        } catch {
+          return false;
+        }
+      },
+
+      verifySignUp: async (phoneCode, emailCode) => {
+        const p = get().pendingSignUp;
+        if (!p) return 'expired';
+        const finish = (backendAuth: BackendAuth | null) =>
+          set({
+            pendingSignUp: null,
+            backendAuth,
+            parent: {
+              email: p.email,
+              name: p.name,
+              phone: p.phone,
+              verifiedAt: new Date().toISOString(),
+              passwordHash: p.passwordHash,
+              pinHash: p.pinHash,
+              consentGivenAt: p.sentAt,
+              createdAt: new Date().toISOString(),
+            },
+            parentSignedIn: true,
+          });
+
+        if (p.mode === 'demo') {
+          if (Date.now() > Date.parse(p.expiresAt) || p.failedAttempts >= SIGNUP_MAX_FAILED) return 'expired';
+          const phoneOk = phoneCode.trim() === p.demoCodes!.phone;
+          const emailOk = emailCode.trim() === p.demoCodes!.email;
+          if (!phoneOk || !emailOk) {
+            set({ pendingSignUp: { ...p, failedAttempts: p.failedAttempts + 1 } });
+            return !phoneOk && !emailOk ? 'wrong-both' : !phoneOk ? 'wrong-phone' : 'wrong-email';
+          }
+          finish(null);
+          return 'ok';
+        }
+        try {
+          const auth = await api.verifyRegistration(p.registrationId!, phoneCode.trim(), emailCode.trim());
+          finish({ access: auth.accessToken, refresh: auth.refreshToken });
+          return 'ok';
+        } catch (e) {
+          if (!(e instanceof api.ApiError)) return 'network';
+          if (e.status !== 401) return e.status === 409 ? 'expired' : 'network';
+          // The server says which code was wrong in its message; "expired" covers lock-out too.
+          if (/expired/i.test(e.message)) return 'expired';
+          return /WhatsApp/.test(e.message) ? 'wrong-phone' : /email/.test(e.message) ? 'wrong-email' : 'wrong-both';
+        }
+      },
+
+      cancelSignUp: () => set({ pendingSignUp: null }),
 
       signIn: async (email, password) => {
         const passwordHash = await hashSecret(password);
@@ -469,6 +639,7 @@ export const useStore = create<State>()(
         settings: s.settings,
         enrolledMembers: s.enrolledMembers,
         pendingEnrollments: s.pendingEnrollments,
+        pendingSignUp: s.pendingSignUp,
       }),
     },
   ),

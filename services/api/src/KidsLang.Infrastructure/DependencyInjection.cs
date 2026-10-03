@@ -24,6 +24,16 @@ public static class DependencyInjection
         services.AddScoped<IKidsLangDb>(sp => sp.GetRequiredService<KidsLangDbContext>());
         services.AddSingleton<IPasswordService, PasswordService>();
         services.AddSingleton<IClock, SystemClock>();
+        // WhatsApp + email providers are on hold (docs/PENDING-DECISIONS.md). "Dev" keeps codes in memory.
+        if (string.Equals(config["Otp:Sender"], "Dev", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<DevOtpOutbox>();
+            services.AddSingleton<IOtpSender>(sp => sp.GetRequiredService<DevOtpOutbox>());
+        }
+        else
+        {
+            services.AddSingleton<IOtpSender, UnconfiguredOtpSender>();
+        }
         var root = config["Content:Root"] ?? JsonContentCatalog.LocateContentRoot(contentRootPath);
         services.AddSingleton<IContentCatalog>(new JsonContentCatalog(root));
         return services;

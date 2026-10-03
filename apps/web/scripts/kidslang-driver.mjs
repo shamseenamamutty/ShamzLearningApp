@@ -7,6 +7,24 @@ export const items = JSON.parse(readFileSync(itemsPath, 'utf8')).items;
 const byName = (name) => items.find((i) => i.name.en === name);
 const byMeaning = (m) => items.find((i) => i.example.meaning === m);
 
+/** Parent sign-up: details → verification codes (shown on screen in demo mode) → verify. */
+export async function signUp(page, { email = 'parent@example.com', shot } = {}) {
+  await page.getByLabel('Your name').fill('Amina');
+  await page.getByLabel('Mobile number (WhatsApp)').fill('50 123 4567');
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel(/^Password/).fill('kidslang-demo');
+  await page.getByLabel('PIN', { exact: true }).fill('4821');
+  await page.getByLabel('Confirm PIN').fill('4821');
+  await page.getByRole('checkbox').check();
+  if (shot) await shot('signup');
+  await page.getByRole('button', { name: 'Send verification codes' }).click();
+  await page.getByTestId('demo-codes').waitFor();
+  await page.getByLabel(/WhatsApp code/).fill(await page.getByTestId('demo-phone-code').textContent());
+  await page.getByLabel(/Email code/).fill(await page.getByTestId('demo-email-code').textContent());
+  if (shot) await shot('verify');
+  await page.getByRole('button', { name: 'Verify and create account' }).click();
+}
+
 export async function passGate(page) {
   const hold = page.getByRole('button', { name: /hold for 3 seconds/i });
   await hold.waitFor();

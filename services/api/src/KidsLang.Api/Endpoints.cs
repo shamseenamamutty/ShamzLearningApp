@@ -16,7 +16,10 @@ public static class Endpoints
         var v1 = app.MapGroup("/api/v1");
 
         var auth = v1.MapGroup("/auth").RequireRateLimiting("auth");
-        auth.MapPost("/register", (RegisterRequest req, AuthService svc, CancellationToken ct) => svc.RegisterAsync(req, ct).ToHttp()).Validate<RegisterRequest>();
+        // Sign-up: details → codes by WhatsApp + email → verify both to create the account.
+        auth.MapPost("/register/start", (StartRegistrationRequest req, RegistrationService svc, CancellationToken ct) => svc.StartAsync(req, ct).ToHttp()).Validate<StartRegistrationRequest>();
+        auth.MapPost("/register/resend", (ResendRegistrationRequest req, RegistrationService svc, CancellationToken ct) => svc.ResendAsync(req, ct).ToHttp()).Validate<ResendRegistrationRequest>();
+        auth.MapPost("/register/verify", (VerifyRegistrationRequest req, RegistrationService svc, CancellationToken ct) => svc.VerifyAsync(req, ct).ToHttp()).Validate<VerifyRegistrationRequest>();
         auth.MapPost("/login", (LoginRequest req, AuthService svc, CancellationToken ct) => svc.LoginAsync(req, ct).ToHttp()).Validate<LoginRequest>();
         auth.MapPost("/refresh", (RefreshRequest req, AuthService svc, CancellationToken ct) => svc.RefreshAsync(req, ct).ToHttp()).Validate<RefreshRequest>();
 
@@ -67,6 +70,8 @@ public static class Endpoints
             ErrorKind.Conflict => Results.Problem(result.Error.Message, statusCode: 409),
             ErrorKind.Unauthorized => Results.Problem(result.Error.Message, statusCode: 401),
             ErrorKind.Forbidden => Results.Problem(result.Error.Message, statusCode: 403),
+            ErrorKind.TooManyRequests => Results.Problem(result.Error.Message, statusCode: 429),
+            ErrorKind.Unavailable => Results.Problem(result.Error.Message, statusCode: 503),
             _ => Results.Problem(result.Error.Message, statusCode: 400),
         };
     }

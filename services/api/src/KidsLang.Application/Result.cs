@@ -1,6 +1,6 @@
 namespace KidsLang.Application;
 
-public enum ErrorKind { NotFound, Conflict, Unauthorized, Forbidden, Invalid }
+public enum ErrorKind { NotFound, Conflict, Unauthorized, Forbidden, Invalid, Unavailable, TooManyRequests }
 
 public sealed record Error(ErrorKind Kind, string Message);
 

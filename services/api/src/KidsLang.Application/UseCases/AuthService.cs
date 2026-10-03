@@ -7,19 +7,7 @@ namespace KidsLang.Application.UseCases;
 
 public sealed class AuthService(IKidsLangDb db, IPasswordService passwords, ITokenService tokens, IClock clock)
 {
-    public async Task<Result<AuthResponse>> RegisterAsync(RegisterRequest req, CancellationToken ct)
-    {
-        var email = req.Email.Trim().ToLowerInvariant();
-        if (await db.Parents.AnyAsync(p => p.Email == email, ct))
-            return Result<AuthResponse>.Fail(ErrorKind.Conflict, "An account with this email already exists.");
-
-        var parent = new Parent { Email = email, ConsentGivenAtUtc = clock.UtcNow, Locale = req.Locale ?? "en", CreatedAtUtc = clock.UtcNow };
-        parent.PasswordHash = passwords.Hash(parent, req.Password);
-        db.Parents.Add(parent);
-        var response = Issue(parent);
-        await db.SaveChangesAsync(ct);
-        return Result<AuthResponse>.Ok(response);
-    }
+    // Sign-up lives in RegistrationService (WhatsApp + email codes).
 
     public async Task<Result<AuthResponse>> LoginAsync(LoginRequest req, CancellationToken ct)
     {

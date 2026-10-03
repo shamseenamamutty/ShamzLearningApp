@@ -1,13 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { passGate, playLesson, solveCurrent } from '../scripts/kidslang-driver.mjs';
+import { passGate, playLesson, signUp, solveCurrent } from '../scripts/kidslang-driver.mjs';
 
 async function onboard(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: /Let's go/ }).click();
-  await page.getByLabel('Email').fill('Parent@Example.com');
-  await page.getByLabel('Password').fill('kidslang-demo');
-  await page.getByRole('checkbox').check();
-  await page.getByRole('button', { name: 'Create account' }).click();
+  await signUp(page, { email: 'Parent@Example.com' });
   await passGate(page);
   await page.getByLabel('Nickname').fill('Sara');
   await page.getByRole('button', { name: 'Create profile' }).click();

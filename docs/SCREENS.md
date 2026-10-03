@@ -35,7 +35,7 @@ BRD §14 #2 · FR-01, FR-04
 |---|---|---|
 | <img src="screens/02-parent-signup.png" width="240"> | <img src="screens/03-parent-gate-hold.png" width="240"> | <img src="screens/04-parent-gate-question.png" width="240"> |
 
-- Parents register with an email and a password of 8+ characters. Emails are lower-cased before they're stored.
+- Parents register with their name, mobile number (country code + number), email, a password of 8+ characters and a 4-digit parent PIN. Kidzly then sends a code by WhatsApp and another by email (`/signup/verify`); both are needed to create the account. Until the WhatsApp/email providers are chosen, the live site runs in **demo mode** and shows the codes on screen — see `docs/PENDING-DECISIONS.md`. Emails are lower-cased and phones stored as E.164 (+971…).
 - A **consent step** is required (COPPA / GDPR-K): no ads, no tracking, and the child only needs a nickname.
 - The **parent gate** protects profile creation, settings and the dashboard. The parent holds the button for
   3 seconds, then taps the answer to a multiplication. A passed gate lasts 5 minutes.

@@ -34,7 +34,7 @@
     "email": "Email",
     "password": "Password",
     "passwordHint": "At least 8 characters",
-    "consent": "I am the parent or guardian. I agree to the Privacy Policy. Kidzly has no ads and no tracking, and my child only needs a nickname.",
+    "consent": "I am the parent or guardian. I agree to the Privacy Policy. Kidzly has no ads and no tracking, uses my email and phone only to verify and secure my account, and my child only needs a nickname.",
     "createAccount": "Create account",
     "signIn": "Sign in",
     "haveAccount": "I already have an account",
@@ -46,6 +46,42 @@
     "enroll": "Enroll a caregiver",
     "adminTitle": "Admin sign-in",
     "adminSignIn": "Sign in as admin"
+  },
+  "signup": {
+    "name": "Your name",
+    "phone": "Mobile number (WhatsApp)",
+    "countryCode": "Country code",
+    "phoneHint": "Kidzly sends a code to this number on WhatsApp.",
+    "nameRequired": "Please enter your name.",
+    "phoneInvalid": "Please enter a valid mobile number with its country code.",
+    "pinTitle": "Parent PIN",
+    "pinHint": "4 digits. Kidzly asks for it every time someone taps Let's go.",
+    "sendCodes": "Send verification codes",
+    "sending": "Sending codes…",
+    "error": {
+      "exists": "An account with this email or phone number already exists.",
+      "unavailable": "We can't send verification codes right now. Please try again later.",
+      "network": "Couldn't reach Kidzly. Check your connection and try again."
+    }
+  },
+  "verify": {
+    "title": "Verify your account",
+    "body": "Hi {{name}}! Kidzly sent you two 6-digit codes. Enter both to finish signing up.",
+    "whatsapp": "WhatsApp code",
+    "email": "Email code",
+    "submit": "Verify and create account",
+    "resend": "Send new codes",
+    "resendIn": "Send new codes in {{s}}s",
+    "resent": "New codes sent.",
+    "demoTitle": "Demo mode",
+    "demoBody": "WhatsApp and email sending isn't switched on yet, so your codes are shown here:",
+    "error": {
+      "wrong-phone": "The WhatsApp code isn't right.",
+      "wrong-email": "The email code isn't right.",
+      "wrong-both": "Both codes aren't right.",
+      "expired": "These codes have expired. Tap \"Send new codes\".",
+      "network": "Couldn't reach Kidzly. Check your connection and try again."
+    }
   },
   "pin": {
     "signupTitle": "Parent PIN (optional)",

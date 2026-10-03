@@ -11,6 +11,7 @@ public sealed class KidsLangDbContext(DbContextOptions<KidsLangDbContext> option
 {
     public DbSet<Parent> Parents => Set<Parent>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<PendingRegistration> PendingRegistrations => Set<PendingRegistration>();
     public DbSet<ChildProfile> ChildProfiles => Set<ChildProfile>();
     public DbSet<LessonProgress> LessonProgress => Set<LessonProgress>();
     public DbSet<ActivityAttempt> ActivityAttempts => Set<ActivityAttempt>();
@@ -26,10 +27,22 @@ public sealed class KidsLangDbContext(DbContextOptions<KidsLangDbContext> option
         {
             e.HasIndex(p => p.Email).IsUnique();
             e.Property(p => p.Email).HasMaxLength(254);
+            e.Property(p => p.Name).HasMaxLength(80);
+            e.Property(p => p.Phone).HasMaxLength(16);
+            // Indexed, not unique: accounts from before phone sign-up have "". RegistrationService enforces uniqueness.
+            e.HasIndex(p => p.Phone);
             e.HasMany(p => p.Children).WithOne().HasForeignKey(c => c.ParentId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(p => p.RefreshTokens).WithOne().HasForeignKey(t => t.ParentId).OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<RefreshToken>().HasIndex(t => t.TokenHash).IsUnique();
+        b.Entity<PendingRegistration>(e =>
+        {
+            e.HasIndex(r => r.Email);
+            e.HasIndex(r => r.Phone);
+            e.Property(r => r.Email).HasMaxLength(254);
+            e.Property(r => r.Phone).HasMaxLength(16);
+            e.Property(r => r.Name).HasMaxLength(80);
+        });
         b.Entity<ChildProfile>(e =>
         {
             e.Property(c => c.Nickname).HasMaxLength(20);

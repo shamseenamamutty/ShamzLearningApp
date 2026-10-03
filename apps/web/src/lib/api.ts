@@ -100,8 +100,31 @@ async function auth<T>(path: string, init: RequestInit = {}): Promise<T> {
   return parse<T>(res);
 }
 
-export async function register(email: string, password: string, consentGiven: boolean, locale?: string): Promise<AuthResponse> {
-  return parse(await raw('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, consentGiven, locale }) }));
+export interface StartRegistrationRequest {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  pin: string;
+  consentGiven: boolean;
+  locale?: string;
+}
+export interface StartRegistrationResponse {
+  registrationId: string;
+  maskedPhone: string;
+  maskedEmail: string;
+  expiresAtUtc: string;
+}
+/** Sign-up step 1: the server sends a code by WhatsApp to the phone and another by email. */
+export async function startRegistration(req: StartRegistrationRequest): Promise<StartRegistrationResponse> {
+  return parse(await raw('/auth/register/start', { method: 'POST', body: JSON.stringify(req) }));
+}
+export async function resendRegistration(registrationId: string): Promise<StartRegistrationResponse> {
+  return parse(await raw('/auth/register/resend', { method: 'POST', body: JSON.stringify({ registrationId }) }));
+}
+/** Sign-up step 2: both codes must match; returns tokens for the new account. */
+export async function verifyRegistration(registrationId: string, phoneCode: string, emailCode: string): Promise<AuthResponse> {
+  return parse(await raw('/auth/register/verify', { method: 'POST', body: JSON.stringify({ registrationId, phoneCode, emailCode }) }));
 }
 export async function login(email: string, password: string): Promise<AuthResponse> {
   return parse(await raw('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }));

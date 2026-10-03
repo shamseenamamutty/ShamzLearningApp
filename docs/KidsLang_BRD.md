@@ -186,7 +186,7 @@ All activities are data-driven: one renderer per type, content supplied as JSON 
 
 | ID | Requirement |
 |---|---|
-| FR-01 | Parent registers with email + password (or Google sign-in in P2). |
+| FR-01 | Parent registers with name, email, mobile number, password and a 4-digit parent PIN. Kidzly sends a 6-digit code by WhatsApp to the mobile and another by email; the account is created only when both codes are entered (10-minute expiry, 5 tries, resend after 30 s). Providers and hosting: see `docs/PENDING-DECISIONS.md`. |
 | FR-02 | Parent creates up to 4 child profiles: display name (nickname), age band, avatar, language(s). |
 | FR-03 | Child selects their profile by avatar; optional picture-PIN (tap 3 pictures). No child email/password. |
 | FR-04 | Parent gate (e.g., "hold for 3 seconds + solve a simple multiplication") protects settings, purchases, external links, and the parent dashboard. |
@@ -493,7 +493,9 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| POST | /api/v1/auth/register | Parent sign-up (with consent) |
+| POST | /api/v1/auth/register/start | Parent sign-up step 1 (details + consent): sends WhatsApp + email codes |
+| POST | /api/v1/auth/register/resend | New codes for a pending sign-up |
+| POST | /api/v1/auth/register/verify | Sign-up step 2: both codes → account + tokens |
 | POST | /api/v1/auth/login | Parent login → JWT + refresh |
 | POST | /api/v1/auth/refresh | Refresh token |
 | GET/POST | /api/v1/children | List / create child profiles |

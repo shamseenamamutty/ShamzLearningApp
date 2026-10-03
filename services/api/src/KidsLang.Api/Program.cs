@@ -24,9 +24,10 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<RegistrationService>();
 builder.Services.AddScoped<ChildService>();
 builder.Services.AddScoped<LearningService>();
-builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
 {

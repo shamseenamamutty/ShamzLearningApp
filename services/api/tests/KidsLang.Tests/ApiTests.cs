@@ -1,7 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using KidsLang.Application.Abstractions;
 using KidsLang.Application.Contracts;
+using KidsLang.Application.UseCases;
+using KidsLang.Infrastructure.Security;
 using KidsLang.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -49,12 +52,31 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 
 public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
+    private static string NewPhone() => "+97150" + Random.Shared.Next(1_000_000, 9_999_999);
+
+    private StartRegistrationRequest NewSignUp(string? email = null, string? phone = null) =>
+        new("Amina", email ?? $"Parent{Guid.NewGuid():N}@Example.com", phone ?? NewPhone(), "kidslang-demo", "4821", true, "en");
+
+    /// <summary>Codes the Dev outbox "sent" (Development uses it instead of WhatsApp / email).</summary>
+    private (string Phone, string Email) CodesFor(StartRegistrationRequest req) =>
+        (factory.Services.GetRequiredService<DevOtpOutbox>().LastCode(OtpChannel.WhatsApp, Registration.NormalizePhone(req.Phone))!,
+         factory.Services.GetRequiredService<DevOtpOutbox>().LastCode(OtpChannel.Email, req.Email.ToLowerInvariant())!);
+
+    private async Task<AuthResponse> Register(HttpClient client, StartRegistrationRequest req)
+    {
+        var start = await client.PostAsJsonAsync("/api/v1/auth/register/start", req);
+        Assert.Equal(HttpStatusCode.OK, start.StatusCode);
+        var started = (await start.Content.ReadFromJsonAsync<StartRegistrationResponse>())!;
+        var (phoneCode, emailCode) = CodesFor(req);
+        var verify = await client.PostAsJsonAsync("/api/v1/auth/register/verify", new VerifyRegistrationRequest(started.RegistrationId, phoneCode, emailCode));
+        Assert.Equal(HttpStatusCode.OK, verify.StatusCode);
+        return (await verify.Content.ReadFromJsonAsync<AuthResponse>())!;
+    }
+
     private async Task<(HttpClient Client, AuthResponse Auth)> SignUp()
     {
         var client = factory.CreateClient();
-        var res = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest($"Parent{Guid.NewGuid():N}@Example.com", "kidslang-demo", true, "en"));
-        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
-        var auth = (await res.Content.ReadFromJsonAsync<AuthResponse>())!;
+        var auth = await Register(client, NewSignUp());
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
         return (client, auth);
     }
@@ -70,8 +92,49 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     public async Task Register_requires_consent_and_a_valid_email()
     {
         var client = factory.CreateClient();
-        var res = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest("not-an-email", "short", false, null));
+        var res = await client.PostAsJsonAsync("/api/v1/auth/register/start", new StartRegistrationRequest("", "not-an-email", "12", "short", "12", false, null));
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Sign_up_sends_a_WhatsApp_code_and_an_email_code_and_needs_both()
+    {
+        var client = factory.CreateClient();
+        var req = NewSignUp(phone: "+971 50-" + Random.Shared.Next(100_0000, 999_9999));
+        var start = await client.PostAsJsonAsync("/api/v1/auth/register/start", req);
+        Assert.Equal(HttpStatusCode.OK, start.StatusCode);
+        var started = (await start.Content.ReadFromJsonAsync<StartRegistrationResponse>())!;
+        Assert.StartsWith("+971", started.MaskedPhone);
+        Assert.DoesNotContain(Registration.NormalizePhone(req.Phone)[4..^3], started.MaskedPhone);
+        var (phoneCode, emailCode) = CodesFor(req);
+        Assert.Matches("^\\d{6}$", phoneCode);
+        Assert.Matches("^\\d{6}$", emailCode);
+
+        // One right code is not enough.
+        var wrong = await client.PostAsJsonAsync("/api/v1/auth/register/verify", new VerifyRegistrationRequest(started.RegistrationId, phoneCode, emailCode == "000000" ? "111111" : "000000"));
+        Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
+
+        var ok = await client.PostAsJsonAsync("/api/v1/auth/register/verify", new VerifyRegistrationRequest(started.RegistrationId, phoneCode, emailCode));
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+
+        // The account now exists: the same email or phone can't sign up again.
+        var again = await client.PostAsJsonAsync("/api/v1/auth/register/start", NewSignUp(phone: req.Phone));
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+        var login = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(req.Email, "kidslang-demo"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+    }
+
+    [Fact]
+    public async Task Codes_lock_after_five_wrong_tries()
+    {
+        var client = factory.CreateClient();
+        var req = NewSignUp();
+        var started = (await (await client.PostAsJsonAsync("/api/v1/auth/register/start", req)).Content.ReadFromJsonAsync<StartRegistrationResponse>())!;
+        var (phoneCode, emailCode) = CodesFor(req);
+        for (var i = 0; i < 5; i++)
+            await client.PostAsJsonAsync("/api/v1/auth/register/verify", new VerifyRegistrationRequest(started.RegistrationId, phoneCode == "000000" ? "111111" : "000000", emailCode));
+        var res = await client.PostAsJsonAsync("/api/v1/auth/register/verify", new VerifyRegistrationRequest(started.RegistrationId, phoneCode, emailCode));
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
     }
 
     [Fact]
@@ -79,7 +142,7 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     {
         var client = factory.CreateClient();
         var email = $"Mixed{Guid.NewGuid():N}@Example.com";
-        await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest(email, "kidslang-demo", true, null));
+        await Register(client, NewSignUp(email: email));
         var login = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(email.ToUpperInvariant(), "kidslang-demo"));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var auth = (await login.Content.ReadFromJsonAsync<AuthResponse>())!;
