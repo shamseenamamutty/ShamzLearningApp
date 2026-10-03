@@ -11,6 +11,8 @@ import { emptyChildData, localDate, touchStreak, withDefaults, type ChildData, t
 export interface Parent {
   email: string;
   passwordHash: string;
+  /** Optional 4-digit parent PIN; when set, "Let's go" always asks for it before opening the family. */
+  pinHash?: string | null;
   consentGivenAt: string;
   createdAt: string;
 }
@@ -91,7 +93,11 @@ interface State {
    * best-effort call to the real backend (services/api) and store its tokens on success; a failed
    * or unreachable backend never blocks the local account — see docs/SCREENS.md's placeholder table.
    */
-  registerParent(email: string, password: string): Promise<void>;
+  registerParent(email: string, password: string, pin?: string): Promise<void>;
+  /** Sets (or replaces) the parent PIN for the account on this device. */
+  setParentPin(pin: string): Promise<void>;
+  /** Checks the parent PIN; on success the parent is signed in on this device. */
+  unlockWithPin(pin: string): Promise<boolean>;
   signIn(email: string, password: string): Promise<boolean>;
   /** One-tap access for the site owner/tester: no email, no backend call, purely local. */
   adminSignIn(): void;
@@ -152,11 +158,12 @@ export const useStore = create<State>()(
       enrolledMembers: {},
       pendingEnrollments: {},
 
-      registerParent: async (email, password) => {
+      registerParent: async (email, password, pin) => {
         const passwordHash = await hashSecret(password);
+        const pinHash = pin ? await hashSecret(`pin:${pin}`) : null;
         const cleanEmail = email.trim().toLowerCase();
         set({
-          parent: { email: cleanEmail, passwordHash, consentGivenAt: new Date().toISOString(), createdAt: new Date().toISOString() },
+          parent: { email: cleanEmail, passwordHash, pinHash, consentGivenAt: new Date().toISOString(), createdAt: new Date().toISOString() },
           parentSignedIn: true,
         });
         if (!api.apiEnabled) return;
@@ -186,6 +193,18 @@ export const useStore = create<State>()(
           }
         }
         return ok;
+      },
+
+      setParentPin: async (pin) => {
+        const pinHash = await hashSecret(`pin:${pin}`);
+        set((s) => (s.parent ? { parent: { ...s.parent, pinHash } } : {}));
+      },
+
+      unlockWithPin: async (pin) => {
+        const p = get().parent;
+        if (!p?.pinHash || (await hashSecret(`pin:${pin}`)) !== p.pinHash) return false;
+        set({ parentSignedIn: true });
+        return true;
       },
 
       // Reuses the same local parent record on every tap so repeat visits keep the same children/progress.

@@ -47,6 +47,22 @@
     "adminTitle": "Admin sign-in",
     "adminSignIn": "Sign in as admin"
   },
+  "pin": {
+    "signupTitle": "Parent PIN (optional)",
+    "signupHint": "4 digits. If you set one, Kidzly asks for it every time someone taps Let's go.",
+    "label": "PIN",
+    "confirm": "Confirm PIN",
+    "unlockTitle": "Grown-up check",
+    "unlockBody": "Enter the parent PIN to continue.",
+    "unlock": "Continue",
+    "createTitle": "Set a parent PIN",
+    "createBody": "Choose a 4-digit PIN. Kidzly will ask for it every time someone taps Let's go.",
+    "save": "Save PIN",
+    "wrong": "That PIN isn't right. Try again.",
+    "invalid": "The PIN must be exactly 4 digits.",
+    "mismatch": "The two PINs don't match.",
+    "forgot": "Forgot PIN? Sign in with your password"
+  },
   "enroll": {
     "title": "Enroll a caregiver",
     "adminOnly": "Only the admin account can enroll new caregivers.",

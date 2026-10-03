@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { speak } from '@/engine/audio';
+import { ParentPinDialog } from '@/features/auth/ParentPinDialog';
 import { useStore } from '@/lib/store';
 import { Button } from '@/ui/Button';
 import { Logo } from '@/ui/Logo';
@@ -33,6 +35,16 @@ export default function WelcomeScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const signedIn = useStore((s) => s.parentSignedIn && !!s.parent);
+  const hasParent = useStore((s) => !!s.parent);
+  const hasPin = useStore((s) => !!s.parent?.pinHash);
+  const [pinDialog, setPinDialog] = useState<'unlock' | 'create' | null>(null);
+
+  // "Let's go" always checks the parent PIN when one is set; an account without one is asked to create it.
+  const start = () => {
+    if (hasPin) return setPinDialog('unlock');
+    if (signedIn) return setPinDialog('create');
+    navigate(hasParent ? '/signin' : '/signup');
+  };
 
   return (
     <div className="relative flex h-full flex-col items-center overflow-hidden bg-gradient-to-b from-[#5b21b6] via-grape-600 to-grape-400 px-6 pt-safe text-white">
@@ -78,7 +90,7 @@ export default function WelcomeScreen() {
           block
           variant="sunny"
           className="text-2xl"
-          onClick={() => navigate(signedIn ? '/profiles' : '/signup')}
+          onClick={start}
         >
           {t('welcome.start')} 🚀
         </Button>
@@ -86,6 +98,7 @@ export default function WelcomeScreen() {
           🔒 {t('common.grownUps')}
         </Button>
       </div>
+      <ParentPinDialog mode={pinDialog ?? 'unlock'} open={pinDialog !== null} onClose={() => setPinDialog(null)} />
     </div>
   );
 }

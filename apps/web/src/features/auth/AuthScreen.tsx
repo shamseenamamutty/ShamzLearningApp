@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { isAdminLogin, useStore } from '@/lib/store';
 import { Button } from '@/ui/Button';
+import { Modal } from '@/ui/Modal';
 import { Screen } from '@/ui/Screen';
+import { PIN_PATTERN, ParentPinDialog, pinInput } from './ParentPinDialog';
 
 const input = 'min-h-tap w-full rounded-2xl border-2 border-grape-200 bg-white px-4 text-lg outline-none focus:border-grape-500';
 
@@ -11,12 +13,18 @@ const input = 'min-h-tap w-full rounded-2xl border-2 border-grape-200 bg-white p
 export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  /** Arrived from "Forgot PIN?" — after the password check, ask for a new PIN instead of going straight in. */
+  const resetPin = (location.state as { resetPin?: boolean } | null)?.resetPin === true;
   const register = useStore((s) => s.registerParent);
   const signIn = useStore((s) => s.signIn);
   const adminSignIn = useStore((s) => s.adminSignIn);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [consent, setConsent] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [newPinOpen, setNewPinOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
@@ -34,10 +42,16 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
     e.preventDefault();
     if (mode === 'signup') {
       if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || !consent) return setError(t('auth.invalid'));
-      await register(email, password);
+      // The PIN is optional; if any digit is typed, it must be 4 digits and match the confirmation.
+      if (pin || pinConfirm) {
+        if (!PIN_PATTERN.test(pin)) return setError(t('pin.invalid'));
+        if (pin !== pinConfirm) return setError(t('pin.mismatch'));
+      }
+      await register(email, password, pin || undefined);
       navigate('/profiles/new');
     } else {
       if (!(await signIn(email, password))) return setError(t('auth.wrongCredentials'));
+      if (resetPin) return setNewPinOpen(true);
       navigate('/profiles');
     }
   };
@@ -62,6 +76,39 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
           {mode === 'signup' && <span className="text-sm font-medium text-ink/60">{t('auth.passwordHint')}</span>}
         </label>
         {mode === 'signup' && (
+          <fieldset className="flex flex-col gap-2 rounded-2xl bg-white p-4">
+            <legend className="sr-only">{t('pin.signupTitle')}</legend>
+            <p className="font-bold">🔢 {t('pin.signupTitle')}</p>
+            <p className="text-sm font-medium text-ink/60">{t('pin.signupHint')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1 text-sm font-bold">
+                {t('pin.label')}
+                <input
+                  className={pinInput}
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={4}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm font-bold">
+                {t('pin.confirm')}
+                <input
+                  className={pinInput}
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={4}
+                  value={pinConfirm}
+                  onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                />
+              </label>
+            </div>
+          </fieldset>
+        )}
+        {mode === 'signup' && (
           <label className="flex items-start gap-3 rounded-2xl bg-white p-4 text-base font-medium leading-snug">
             <input type="checkbox" className="mt-1 h-6 w-6 shrink-0 accent-grape-600" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>🛡️ {t('auth.consent')}</span>
@@ -81,15 +128,22 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
       </form>
       <button
         type="button"
-        aria-expanded={adminOpen}
-        onClick={() => setAdminOpen((o) => !o)}
+        aria-haspopup="dialog"
+        onClick={() => setAdminOpen(true)}
         className="mt-2 w-full text-center text-sm font-bold text-ink/40 underline underline-offset-2"
       >
         🛠️ {t('auth.adminAccess')}
       </button>
-      {adminOpen && (
-        <form onSubmit={submitAdmin} className="mt-3 flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-sm" noValidate>
-          <p className="text-center font-bold">{t('auth.adminTitle')}</p>
+      <Modal
+        open={adminOpen}
+        title={`🛠️ ${t('auth.adminTitle')}`}
+        onClose={() => {
+          setAdminOpen(false);
+          setAdminPassword('');
+          setAdminError(null);
+        }}
+      >
+        <form onSubmit={submitAdmin} className="flex flex-col gap-3" noValidate>
           <label className="flex flex-col gap-1 font-bold">
             {t('enroll.adminEmail')}
             <input className={input} type="email" autoComplete="username" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
@@ -107,7 +161,8 @@ export default function AuthScreen({ mode }: { mode: 'signup' | 'signin' }) {
             {t('auth.adminSignIn')}
           </Button>
         </form>
-      )}
+      </Modal>
+      <ParentPinDialog mode="create" open={newPinOpen} onClose={() => setNewPinOpen(false)} />
       {mode === 'signin' && (
         <>
           <button
