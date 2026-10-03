@@ -9,6 +9,11 @@
 }
 
 html, body, #root { height: 100%; }
+/* Size to the part of the screen that's actually visible (excludes the browser's address bar / nav bar
+   on phones), so bottom buttons are never hidden behind them. */
+@supports (height: 100dvh) {
+  html, body, #root { height: 100dvh; }
+}
 body {
   @apply bg-grape-100 font-ui text-ink antialiased;
   -webkit-tap-highlight-color: transparent;

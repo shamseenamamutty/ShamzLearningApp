@@ -59,3 +59,24 @@ test('the app shell and lessons keep working offline, and answers queue for sync
   expect(queued).toBeGreaterThan(0);
   await context.setOffline(false);
 });
+
+test.describe('short phone screen', () => {
+  // A small Android phone with the browser's address bar showing: buttons must never end up off-screen.
+  test.use({ viewport: { width: 360, height: 520 } });
+
+  const onScreen = async (page: Page, name: RegExp) => {
+    const box = await page.getByRole('button', { name }).last().boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(520);
+  };
+
+  test('the Help Loop and reward buttons stay on screen, and the lesson can be finished', async ({ page }) => {
+    await onboard(page);
+    await page.getByTestId('node-ar-l1-u1-l1').click();
+    expect(await playLesson(page, { failCheck: true })).toBe('help');
+    await onScreen(page, /Let's practice/);
+    await page.getByRole('button', { name: /Let's practice/ }).click();
+    expect(await playLesson(page)).toBe('reward');
+    await onScreen(page, /Back to map/);
+  });
+});

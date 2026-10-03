@@ -228,7 +228,7 @@
       "prompt": "Match each letter to its picture."
     },
     "drag": {
-      "prompt": "Drag the letter that starts {{meaning}} into the basket."
+      "prompt": "Drag or tap the letter that starts {{meaning}} to put it in the basket."
     },
     "pop": {
       "prompt": "Pop the balloons with the letter you hear!",
@@ -263,7 +263,7 @@
   },
   "help": {
     "title": "Let's practice together!",
-    "body": "Jamal will help you with these letters, then you can try again.",
+    "body": "{{name}} will help you with these letters, then you can try again.",
     "start": "Let's practice",
     "retry": "Try again",
     "retryTitle": "You're ready!",

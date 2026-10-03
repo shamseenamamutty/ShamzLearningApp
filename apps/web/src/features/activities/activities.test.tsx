@@ -246,6 +246,16 @@ describe('DragDrop', () => {
     expect(screen.getAllByTestId(/^tile-/)).toHaveLength(3);
     // Dragging itself is covered by the Playwright walkthrough (pointer sensors need a real layout).
   });
+  it('also accepts a tap on a letter: a wrong tap shakes, the right tap fills the basket', () => {
+    const onDone = vi.fn();
+    render(<DragDrop activity={{ id: 'x', type: 'drag_drop', phase: 'play', itemId: BA, options: [BA, TA, ALIF] }} onDone={onDone} />);
+    fireEvent.click(screen.getByTestId(`tile-${TA}`));
+    expect(screen.getByTestId(`tile-${TA}`).className).toContain('animate-shake');
+    fireEvent.click(screen.getByTestId(`tile-${BA}`));
+    expect(screen.queryByTestId(`tile-${BA}`)).toBeNull(); // moved into the basket
+    flush();
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: false }));
+  });
 });
 
 describe('TraceLetter', () => {

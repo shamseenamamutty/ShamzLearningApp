@@ -82,7 +82,7 @@ export default function LessonScreen() {
   }
 
   if (session.stage === 'help' && session.index < 0) {
-    return <HelpIntro items={session.helpItems ?? []} mascot={course.mascot.emoji} onStart={() => setSession({ ...session, index: 0 })} />;
+    return <HelpIntro items={session.helpItems ?? []} mascot={course.mascot.emoji} mascotName={course.mascot.name} onStart={() => setSession({ ...session, index: 0 })} />;
   }
 
   const stages = node.kind === 'lesson' ? STAGE_ORDER : (['check'] as LessonStage[]);

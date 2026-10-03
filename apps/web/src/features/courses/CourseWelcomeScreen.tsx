@@ -24,7 +24,7 @@ export default function CourseWelcomeScreen() {
 
   return (
     <Screen bg="bg-gradient-to-b from-grape-100 via-sun-50 to-cream">
-      <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
+      <div className="flex min-h-full flex-col items-center justify-center gap-6 py-4 text-center">
         <ScriptText courseId={courseId} className="text-6xl font-extrabold text-grape-700">{course.title[course.languageCode] ?? course.title.en}</ScriptText>
         <Mascot emoji={course.mascot.emoji} size="lg" says={t('courseWelcome.greeting', { language: languageName })} speakLang="en" />
         <p className="max-w-xs text-lg font-bold text-ink/70">{t('courseWelcome.body')}</p>

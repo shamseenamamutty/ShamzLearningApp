@@ -44,7 +44,7 @@ async function captionTarget(page) {
   if (quoted) return byName(quoted[1]);
   const find = caption.match(/Find the letter (.+) in the word/);
   if (find) return byName(find[1]);
-  const drag = caption.match(/that starts (.+) into the basket/);
+  const drag = caption.match(/that starts (.+?) (?:into|to put it in) the basket/);
   if (drag) return byMeaning(drag[1]);
   return null;
 }
