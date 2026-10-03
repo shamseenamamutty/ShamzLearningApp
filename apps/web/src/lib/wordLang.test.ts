@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getItem } from '@/content/course';
+import { clusters } from './arabic';
 import { meaningIn } from './wordLang';
 
 describe('meaningIn', () => {
@@ -14,5 +15,11 @@ describe('meaningIn', () => {
     expect(meaningIn(lion, 'hi')).toBe('शेर');
     expect(meaningIn(lion, 'ml')).toBe('സിംഹം');
     expect(meaningIn(mango, 'ml')).toBe('മാങ്ങ');
+  });
+
+  it('keeps vowel signs and conjuncts with their letter when splitting for highlighting', () => {
+    expect(clusters('अनार', false).map((c) => c.text)).toEqual(['अ', 'ना', 'र']);
+    expect(clusters('उल्लू', false).map((c) => c.text)).toEqual(['उ', 'ल्लू']);
+    expect(clusters('മാതളനാരങ്ങ', false).map((c) => c.text)).toEqual(['മാ', 'ത', 'ള', 'നാ', 'ര', 'ങ്ങ']);
   });
 });

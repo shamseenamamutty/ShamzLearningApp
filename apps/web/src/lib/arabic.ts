@@ -7,7 +7,11 @@ export const ZWJ = '‍';
 
 const NON_JOINING = new Set(['ا', 'أ', 'إ', 'آ', 'د', 'ذ', 'ر', 'ز', 'و', 'ؤ', 'ة', 'ء']);
 // Any Unicode combining mark (general category Mn): Arabic harakat, Hindi matras, chandrabindu, virama...
-const COMBINING_MARK = /\p{Mn}/u;
+// Any combining mark (Mn non-spacing, Mc spacing — Devanagari/Malayalam vowel signs are Mc) plus
+// ZWJ/ZWNJ, so a letter and its signs always highlight as one piece.
+const COMBINING_MARK = /[\p{M}\u200C\u200D]/u;
+// Virama (halant / chandrakkala): the next consonant forms a conjunct with this one, e.g. ल्ल, ന്ന.
+const VIRAMA = /[\u094D\u0D4D]/u;
 
 export function joinsNext(ch: string): boolean {
   return !NON_JOINING.has(ch) && !COMBINING_MARK.test(ch);
@@ -80,7 +84,7 @@ export function clusters(word: string, joinShapes: boolean): Cluster[] {
     const start = pos;
     pos += first.length;
     i += 1;
-    while (i < chars.length && COMBINING_MARK.test(chars[i]!)) {
+    while (i < chars.length && (COMBINING_MARK.test(chars[i]!) || (VIRAMA.test(chars[i - 1]!) && chars[i] !== ' '))) {
       const mark = chars[i]!;
       text += mark;
       pos += mark.length;

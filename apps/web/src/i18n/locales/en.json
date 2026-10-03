@@ -211,7 +211,8 @@
   "wordLang": {
     "label": "Meaning in",
     "hear": "Hear “{{word}}”",
-    "parentLabel": "Word meanings in"
+    "parentLabel": "Word meanings in",
+    "listen": "Listen"
   },
   "reward": {
     "title": "Hooray!",
