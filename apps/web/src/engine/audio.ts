@@ -31,9 +31,9 @@ function audioContext(): AudioContext | null {
   return ctx;
 }
 
-const LANG_TAGS: Record<string, string> = { ar: 'ar-SA', en: 'en-US', hi: 'hi-IN' };
+const LANG_TAGS: Record<string, string> = { ar: 'ar-SA', en: 'en-US', hi: 'hi-IN', ml: 'ml-IN' };
 
-export type SpeechPart = { text: string; lang: 'ar' | 'en' | 'hi' };
+export type SpeechPart = { text: string; lang: 'ar' | 'en' | 'hi' | 'ml' };
 
 export function speak(text: string, lang: SpeechPart['lang'] = 'en') {
   speakAll([{ text, lang }]);

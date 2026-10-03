@@ -16,3 +16,6 @@ import '@fontsource/noto-naskh-arabic/arabic-400.css';
 import '@fontsource/noto-naskh-arabic/arabic-700.css';
 import '@fontsource/noto-sans-devanagari/devanagari-400.css';
 import '@fontsource/noto-sans-devanagari/devanagari-700.css';
+// Malayalam is a display/listen language for word meanings (not a course yet).
+import '@fontsource/noto-sans-malayalam/malayalam-400.css';
+import '@fontsource/noto-sans-malayalam/malayalam-700.css';

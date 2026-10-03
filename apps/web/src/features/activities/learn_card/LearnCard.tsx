@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button';
 import { Picture } from '@/ui/Picture';
 import { ScriptText } from '@/ui/ScriptText';
 import type { ActivityProps } from '../types';
+import { MeaningButton, WordLangPicker } from '../WordMeaning';
 
 /** Learn: sound, name, shape (Arabic only — other scripts don't reshape by position) and an
  * example word with a picture (BRD §5.2). */
@@ -65,6 +66,12 @@ export default function LearnCard({ activity, onDone }: ActivityProps<'learn_car
           <span className="text-base font-bold text-ink/60">{t('act.learn.word', { name: item.name.en, meaning: item.example.meaning })}</span>
         </span>
       </button>
+
+      <div className="flex w-full flex-col gap-2">
+        <p className="text-center text-sm font-bold uppercase tracking-wide text-ink/50">{t('wordLang.label')}</p>
+        <WordLangPicker />
+        <MeaningButton item={item} />
+      </div>
 
       {forms && (
         <div className="w-full">

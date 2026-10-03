@@ -5,6 +5,7 @@ import { review } from '@/engine/leitner';
 import { evaluateMastery, type ItemResult, type MasteryResult } from '@/engine/mastery';
 import { enqueue, flush, newId } from '@/offline/syncQueue';
 import type { UiLang } from '@/i18n';
+import type { WordLang } from './wordLang';
 import * as api from './api';
 import { emptyChildData, localDate, touchStreak, withDefaults, type ChildData, type LessonSession } from './progress';
 
@@ -34,6 +35,8 @@ export interface ChildSettings {
   quietHours: { start: string; end: string } | null;
   uiLang: UiLang;
   highContrast: boolean;
+  /** Language a lesson word's meaning is shown and spoken in (English by default). */
+  wordLang: WordLang;
 }
 
 export const defaultSettings = (): ChildSettings => ({
@@ -45,6 +48,7 @@ export const defaultSettings = (): ChildSettings => ({
   quietHours: null,
   uiLang: 'en',
   highContrast: false,
+  wordLang: 'en',
 });
 
 /** Backend session (services/api). Null means the app runs fully local/offline — see `lib/api.ts`. */
@@ -483,7 +487,9 @@ export function useActiveChild() {
   const child = useStore((s) => s.children.find((c) => c.id === s.activeChildId) ?? null);
   const rawData = useStore((s) => (s.activeChildId ? s.data[s.activeChildId] : undefined));
   const data = rawData ? withDefaults(rawData) : EMPTY;
-  const settings = useStore((s) => (s.activeChildId ? s.settings[s.activeChildId] : undefined)) ?? DEFAULTS;
+  const stored = useStore((s) => (s.activeChildId ? s.settings[s.activeChildId] : undefined));
+  // Older saved settings predate newer fields (e.g. wordLang) — fill them from the defaults.
+  const settings = stored ? { ...DEFAULTS, ...stored } : DEFAULTS;
   return { child, data, settings };
 }
 

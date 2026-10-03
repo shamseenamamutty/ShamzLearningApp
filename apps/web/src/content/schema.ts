@@ -13,7 +13,15 @@ export const learningItemSchema = z.object({
   translit: z.string().min(1),
   joinsNext: z.boolean(),
   audio: z.string().min(1),
-  example: z.object({ word: z.string().min(1), plain: z.string().min(1), meaning: z.string().min(1), emoji: z.string().min(1) }),
+  example: z.object({
+    word: z.string().min(1),
+    plain: z.string().min(1),
+    /** English meaning (the default display/listen language). */
+    meaning: z.string().min(1),
+    emoji: z.string().min(1),
+    /** The meaning in the other selectable languages; the course's own language is the word itself. */
+    translations: z.object({ hi: z.string().min(1), ar: z.string().min(1), ml: z.string().min(1) }).partial().optional(),
+  }),
 });
 export type LearningItem = z.infer<typeof learningItemSchema>;
 

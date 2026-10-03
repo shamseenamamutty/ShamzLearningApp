@@ -208,6 +208,11 @@
       "prompt": "Tap each picture to hear its word."
     }
   },
+  "wordLang": {
+    "label": "Meaning in",
+    "hear": "Hear “{{word}}”",
+    "parentLabel": "Word meanings in"
+  },
   "reward": {
     "title": "Hooray!",
     "mastered": "You learned a new letter!",

@@ -71,11 +71,33 @@ describe('LearnCard', () => {
   });
 });
 
+describe('word meaning language', () => {
+  it('shows English by default, and switches the shown and spoken meaning to the chosen language', async () => {
+    const { useStore, defaultSettings } = await import('@/lib/store');
+    const { speak } = await import('@/engine/audio');
+    useStore.setState({
+      children: [{ id: 'c1', nickname: 'Zee', ageBand: '4-6', avatar: { animal: '🐱', color: 'grape', item: '' }, pinHash: null, courses: ['ar'], createdAt: '' }],
+      activeChildId: 'c1',
+      settings: { c1: defaultSettings() },
+    });
+    render(<LearnCard activity={{ id: 'x', type: 'learn_card', phase: 'learn', itemId: BA }} onDone={vi.fn()} />);
+    expect(screen.getByTestId('word-meaning').textContent).toBe('🔊duck');
+    fireEvent.click(screen.getByRole('radio', { name: 'മലയാളം' }));
+    expect(screen.getByTestId('word-meaning').textContent).toBe('🔊താറാവ്');
+    fireEvent.click(screen.getByTestId('word-meaning'));
+    expect(speak).toHaveBeenLastCalledWith('താറാവ്', 'ml');
+    fireEvent.click(screen.getByRole('radio', { name: 'हिन्दी' }));
+    expect(screen.getByTestId('word-meaning').textContent).toBe('🔊बत्तख');
+    useStore.setState({ children: [], activeChildId: null, settings: {} });
+  });
+});
+
 describe('StoryCard', () => {
   it('speaks each tapped item and continues on tap', () => {
     const onDone = vi.fn();
     render(<StoryCard activity={{ id: 'x', type: 'story_card', phase: 'learn', itemId: BA, items: [BA, TA, ALIF] }} onDone={onDone} />);
-    expect(screen.getAllByRole('button')).toHaveLength(4); // 3 items + Continue
+    expect(screen.getAllByRole('button')).toHaveLength(7); // 3 items + 3 meanings + Continue
+    expect(screen.getAllByTestId('word-meaning').map((b) => b.textContent)).toEqual(['🔊duck', '🔊apple', '🔊lion']);
     fireEvent.click(screen.getByTestId(`story-item-${BA}`));
     expect(screen.getByTestId(`story-item-${BA}`).className).toContain('ring-sky2-400');
     fireEvent.click(screen.getByRole('button', { name: /Continue/ }));

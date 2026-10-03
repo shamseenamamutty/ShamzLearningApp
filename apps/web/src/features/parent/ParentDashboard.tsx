@@ -10,6 +10,7 @@ import { Avatar } from '@/ui/Avatar';
 import { ScriptText } from '@/ui/ScriptText';
 import { Button } from '@/ui/Button';
 import { Screen } from '@/ui/Screen';
+import { WORD_LANGS, isWordLang } from '@/lib/wordLang';
 import { Toggle } from '@/ui/Toggle';
 
 const card = 'rounded-blob bg-white p-4 shadow-sm';
@@ -185,6 +186,20 @@ export default function ParentDashboard() {
                 >
                   <option value="en">English</option>
                   <option value="ar">العربية</option>
+                </select>
+              </label>
+              <label className="flex min-h-tap items-center justify-between gap-3 text-lg font-bold">
+                <span>{t('wordLang.parentLabel')}</span>
+                <select
+                  className="min-h-tap rounded-2xl border-2 border-grape-200 bg-white px-3"
+                  value={settings.wordLang ?? 'en'}
+                  onChange={(e) => isWordLang(e.target.value) && updateSettings(child.id, { wordLang: e.target.value })}
+                >
+                  {WORD_LANGS.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.label}
+                    </option>
+                  ))}
                 </select>
               </label>
             </section>

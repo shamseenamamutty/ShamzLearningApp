@@ -71,3 +71,15 @@ describe('Hindi Level 1 content', () => {
     for (const item of hindiItems) expect(item.example.plain).toContain(item.glyph);
   });
 });
+
+describe('word meanings in every selectable language', () => {
+  it.each([
+    ['ar', arabicItems],
+    ['hi', hindiItems],
+  ] as const)('every %s example word has a translation for each other language', (courseId, items) => {
+    for (const item of items)
+      for (const lang of (['hi', 'ar', 'ml'] as const).filter((l) => l !== courseId)) {
+        expect(item.example.translations?.[lang], `${item.id} → ${lang}`).toBeTruthy();
+      }
+  });
+});
