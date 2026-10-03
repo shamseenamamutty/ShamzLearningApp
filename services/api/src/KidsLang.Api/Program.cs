@@ -44,7 +44,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = 429;
-    o.AddFixedWindowLimiter("auth", l => { l.PermitLimit = 20; l.Window = TimeSpan.FromMinutes(1); });
+    // Per client IP (not one bucket shared by every parent). Sign-up takes 2–3 calls, so 20/min leaves room.
+    var authPerMinute = builder.Configuration.GetValue("RateLimits:AuthPerMinute", 20);
+    o.AddPolicy("auth", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = authPerMinute, Window = TimeSpan.FromMinutes(1) }));
 });
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5173", "http://localhost:4173"])

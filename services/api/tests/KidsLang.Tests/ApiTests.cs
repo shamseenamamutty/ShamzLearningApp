@@ -25,6 +25,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+        // Every test request comes from the same in-memory client, so lift the per-IP auth limit.
+        builder.UseSetting("RateLimits:AuthPerMinute", "10000");
         if (string.IsNullOrEmpty(Postgres))
         {
             builder.UseSetting("Database:Provider", "Sqlite");
